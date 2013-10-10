@@ -1,0 +1,774 @@
+<title>Obviously Both: You can do everything!</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+<style>
+.toolbar-section {
+	margin-right: 30px;
+}
+#selection {
+	background: #eed5b7;
+	border-radius: 6px;
+	padding: 8px;
+}
+#selection p {
+	margin-top: 0;
+}
+#inactive {
+	color: gray;
+}
+#import textarea {
+	width: 80%;
+}
+label,
+label input {
+	cursor: pointer;
+}
+</style>
+
+<script src="jquery.min.js"></script>
+<script src="jquery.linkify.js"></script>
+<script src="moment.min.js"></script>
+<script src="notifications.js"></script>
+<script src="shuffle.js"></script>
+<script>
+
+var timeOfLastAction = new Date;
+
+// task trees
+function makeNode(id, text, skip) {
+	return {
+		id: id,
+		text: text,
+		children: [],
+		excludedContexts: [],
+		skip: skip,
+	};
+}
+function nodeWalk(node, iter, data, filter) {
+	var children = node.children.slice();
+	if (!node.skip && (!filter || filter(node))) {
+		data = iter(node, data);
+	}
+	children.forEach(function (child) {
+		nodeWalk(child, iter, data, filter);
+	});
+}
+function nodeSize(node) {
+	var count = 0;
+	nodeWalk(node, function () { count++ });
+	return count;
+}
+function findNodeWithText(root, text) {
+	var found;
+	nodeWalk(root, function (node) {
+		if (node.text === text) {
+			found = node;
+		}
+	});
+	return found;
+}
+
+function nodesByStaleness(root, filter) {
+	var allNodes = [];
+	nodeWalk(root, function (node) {
+		allNodes.push(node);
+	}, null /* data */, filter);
+	allNodes.sort(function (a, b) {
+		if (a.lastComparisonTimestamp) {
+			if (b.lastComparisonTimestamp) {
+				return a.lastComparisonTimestamp - b.lastComparisonTimestamp;
+			} else {
+				return 1;
+			}
+		} else {
+			if (b.lastComparisonTimestamp) {
+				return -1;
+			} else {
+				return 0;
+			}
+		}
+	});
+	return allNodes;
+}
+
+// from http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+// could be wrong, but probably random enough for me
+function guid() {
+	function s4() {
+		return Math.floor((1 + Math.random()) * 0x10000)
+		           .toString(16)
+		           .substring(1);
+	}
+
+	return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+	       s4() + '-' + s4() + s4() + s4();
+}
+
+
+// localStorage backward-compatibility
+if(typeof localStorage == "undefined") {
+	localStorage = {
+		getItem: function() { },
+		setItem: function() { },
+		removeItem: function() { },
+	}
+}
+
+function isInSet(arr, item) {
+	return arr.indexOf(item) !== -1;
+}
+function addToSet(arr, item) {
+	var idx = arr.indexOf(item);
+	if (idx === -1) {
+		arr.push(item);
+	}
+}
+function removeFromSet(arr, item) {
+	var idx = arr.indexOf(item);
+	if (idx !== -1) {
+		arr.splice(idx, 1);
+	}
+}
+
+var mergeSort = (function () {
+
+    /**
+     * Merge sort (http://en.wikipedia.org/wiki/Merge_sort)
+     * @version 0.1.0 (2012/05/23)
+     */
+    function mergeSort(arr, compareFn) {
+        if (arr.length < 2) {
+            return arr;
+        }
+
+        if (compareFn == null) {
+            compareFn = defaultCompare;
+        }
+
+        var mid, left, right;
+
+        mid   = ~~(arr.length / 2);
+        left  = mergeSort( arr.slice(0, mid), compareFn );
+        right = mergeSort( arr.slice(mid, arr.length), compareFn );
+
+        return merge(left, right, compareFn);
+    }
+
+    function defaultCompare(a, b) {
+        return a < b ? -1 : (a > b? 1 : 0);
+    }
+
+    function merge(left, right, compareFn) {
+        var result = [];
+
+        while (left.length && right.length) {
+            if (compareFn(left[0], right[0]) <= 0) {
+                // if 0 it should preserve same order (stable)
+                result.push(left.shift());
+            } else {
+                result.push(right.shift());
+            }
+        }
+
+        if (left.length) {
+            result.push.apply(result, left);
+        }
+
+        if (right.length) {
+            result.push.apply(result, right);
+        }
+
+        return result;
+    }
+
+    return mergeSort;
+})();
+
+var activeRoot, parents;
+
+function addNode(text, parent) {
+	parent = (parent || activeRoot);
+	var node = makeNode(guid(), text);
+	appendNode(node, parent);
+	return node;
+}
+function removeNode(node) {
+	var parent = parents[node.id];
+	if (parent) {
+		removeFromSet(parent.children, node);
+	}
+	return node;
+}
+function spliceNode(node) {
+	var parent = parents[node.id];
+	if (parent) {
+		node.children.slice().forEach(function (child) {
+			moveNode(child, parent);
+		});
+		removeFromSet(parent.children, node);
+	}
+	return node;
+}
+function appendNode(node, parent, updateTimestamp) {
+	addToSet(parent.children, node);
+	parents[node.id] = parent;
+	if (updateTimestamp) {
+		node.lastComparisonTimestamp = new Date().getTime();
+	}
+	return node;
+}
+function moveNode(node, newParent, updateTimestamp) {
+	removeNode(node);
+	appendNode(node, newParent, updateTimestamp);
+	return node;
+}
+
+var contexts = [
+	{ name: "before work" },
+	{ name: "work" },
+	{ name: "home" },
+	{ name: "errands" },
+	{ name: "on-the-go" },
+	{ name: "tired" },
+	{ name: "scratch" },
+	{ name: "[prefixed with 'WF']", regexp: /^WF/ },
+];
+function addContexts() {
+	contexts.forEach(function (context) {
+		$("<option />").text(context.name).appendTo("#context");
+	});
+}
+function getCurrentContext() {
+	return contexts[$("#context").prop("selectedIndex") - 1];
+}
+function isInCurrentContext(node) {
+	var context = getCurrentContext();
+	if (context) {
+		if (context.regexp) {
+			return context.regexp.test(node.text);
+		} else {
+			return node.excludedContexts.indexOf(context.name) === -1;
+		}
+	}
+	return true;
+}
+function isNotInCurrentContext(node) {
+	return !isInCurrentContext(node);
+}
+
+function load() {
+	console.time("load");
+	try {
+		activeRoot = JSON.parse(localStorage.getItem("activeRoot"));
+		parents = {};
+		if (activeRoot) {
+			nodeWalk(activeRoot, function (node, parent) {
+				parents[node.id] = parent;
+				return node;
+			}, activeRoot);
+		} else {
+			reset();
+		}
+	} catch (e) {
+		console.log("load failed", e);
+		reset();
+	}
+	console.timeEnd("load");
+}
+
+function save() {
+	console.time("save");
+	localStorage.setItem("activeRoot", JSON.stringify(activeRoot));
+	console.timeEnd("save");
+
+	timeOfLastAction = new Date;
+	renderTimer();
+}
+
+function reset() {
+	activeRoot = makeNode(0, "[root]", true /* skip */);
+	parents = {};
+}
+
+function tossInStaleNodes(cb) {
+	var activeChildrenBefore = getActiveChildren().length;
+	cb();
+	var activeChildrenAfter = getActiveChildren().length;
+
+	// if children are moving to the root because of this deletion,
+	// then also add the most stale node to the root. the user is
+	// unlikely to notice, and this helps keep priorities current.
+	if (activeChildrenAfter > activeChildrenBefore) {
+		var mostStale = nodesByStaleness(activeRoot, isInCurrentContext)[0];
+		moveNode(mostStale, activeRoot);
+	}
+}
+
+function deleteHandler(node) {
+	return function () {
+		if (confirm("Delete for real?")) {
+			tossInStaleNodes(function () {
+				spliceNode(node);
+			});
+
+			save();
+			render();
+			notes.closeLast();
+			scheduleNotification(2 * 60 * 1000);
+		}
+	};
+}
+
+function editHandler(node, preserveContexts) {
+	return function () {
+		var val = prompt("", node.text);
+		if (val !== null) {
+			node.text = val;
+			if (!preserveContexts) {
+				node.excludedContexts = [];
+			}
+			save();
+			render();
+		}
+	}
+}
+
+function getActiveChildren() {
+	var activeChildren = [];
+	nodeWalk(activeRoot, function (node, isChild) {
+		if (!isChild) {
+			activeChildren.push(node);
+		}
+		return true;
+	}, false, isInCurrentContext);
+	return activeChildren;
+}
+
+function render() {
+	console.time("render");
+
+	var currentContext = getCurrentContext();
+
+	var $selection = $("#selection");
+	var $selectionContent = $("#selection .content");
+
+	var $active = $("#active");
+	var $activeContent = $("#active .content");
+
+	var $inactive = $("#inactive");
+	var $inactiveContent = $("#inactive .content");
+
+	$selection.hide();
+	$selectionContent.empty();
+	$activeContent.empty();
+	$inactive.hide();
+	$inactiveContent.empty();
+
+	// activeRoot.children = mergeSort(activeRoot.children, function (a, b) { return nodeSize(a) - nodeSize(b) });
+	// var activeChildren = activeRoot.children.filter(isInCurrentContext);
+	var activeChildren = getActiveChildren();
+	activeChildren = mergeSort(activeChildren, function (a, b) { return nodeSize(a) - nodeSize(b) });
+
+	var totalCount = 0, topLevelCount = activeChildren.length;
+	nodeWalk(activeRoot, function () { totalCount++ }, null, isInCurrentContext);
+	$("#item-count").text(totalCount + " item" + (totalCount === 1 ? "" : "s"));
+	if (topLevelCount === 1) {
+		$("#item-count").append(", <em>1 next action!</em>");
+	} else if (topLevelCount > 1) {
+		$("#item-count").append(" (" + topLevelCount + " to go)");
+	}
+
+	if (activeChildren.length > 1) {
+		$selection.show();
+
+		var a = activeChildren[0], b = activeChildren[1];
+
+		var $button1 = $("<button />").text("This One");
+		var $button2 = $("<button />").text("This One");
+		var $text1 = $("<span />").text(a.text).linkify();
+		var $text2 = $("<span />").text(b.text).linkify();
+
+		$button1.on("click", function () {
+			moveNode(b, a, true /* update timestamp */);
+			save(); render();
+			notes.closeLast(); scheduleNotification(2 * 60 * 1000);
+		});
+		$button2.on("click", function () {
+			moveNode(a, b, true /* update timestamp */);
+			save(); render();
+			notes.closeLast(); scheduleNotification(2 * 60 * 1000);
+		});
+
+		var $div1 = $("<div />").appendTo($selectionContent).append($button1);
+		var $div2 = $("<div />").appendTo($selectionContent).append($button2);
+
+		if (currentContext) {
+			var $contextButton1 = $("<button />").text("Not \"" + currentContext.name + "\"");
+			var $contextButton2 = $("<button />").text("Not \"" + currentContext.name + "\"");
+
+			$contextButton1.on("click", function () {
+				tossInStaleNodes(function () {
+					a.excludedContexts.push(currentContext.name);
+				});
+				save(); render();
+				notes.closeLast(); scheduleNotification(2 * 60 * 1000);
+			});
+			$contextButton2.on("click", function () {
+				tossInStaleNodes(function () {
+					b.excludedContexts.push(currentContext.name);
+				});
+				save(); render();
+				notes.closeLast(); scheduleNotification(2 * 60 * 1000);
+			});
+
+			$div1.append(" ").append($contextButton1);
+			$div2.append(" ").append($contextButton2);
+		}
+
+		$div1.append(" ").append($text1);
+		$div2.append(" ").append($text2);
+
+		[{ item: a, $div: $div1 }, { item: b, $div: $div2 }].forEach(function (x) {
+			x.$div.append(" ");
+			var $removeButton = $("<button />").html("&times;").appendTo(x.$div);
+			$removeButton.on("click", deleteHandler(x.item));
+
+			x.$div.append(" ");
+			var $editButton = $("<button />").text("Edit").appendTo(x.$div);
+			$editButton.on("click", editHandler(x.item));
+
+			x.$div.append(" ");
+			var itsId = guid();
+			var $isTimeSensitive = $("<input type='checkbox' />").prop("id", itsId).prop("checked", !!x.item.isTimeSensitive);
+			$("<label />").prop("for", itsId).append($isTimeSensitive, " Time-sensitive").appendTo(x.$div);
+			$isTimeSensitive.on("change", function (node) {
+				return function () {
+					node.isTimeSensitive = !node.isTimeSensitive;
+					save();
+					render();
+				}
+			}(x.item));
+
+			x.$div.append(" ");
+			var $go = $("<a href='#'>Reveal below</a>").appendTo(x.$div);
+			$go.on("click", function (node) {
+				return function (e) {
+					e.preventDefault();
+					$(document.body).animate({ scrollTop: $("#tree-node-" + node.id).offset().top });
+				}
+			}(x.item));
+		});
+
+		var $both = $("<div />").appendTo($selectionContent);
+		var $bothButton = $("<button />").text("Obviously Both!").appendTo($both);
+		$both.append(" ");
+		var $bothExplanation = $("<span />").html("When you're stumped, this button might give you two new tasks to compare!").hide().appendTo($both);
+		$bothButton.hover(function () {
+			$bothExplanation.show();
+		}, function () {
+			$bothExplanation.hide();
+		});
+		$bothButton.on("click", function () {
+			shuffle(activeRoot.children);
+			nodeWalk(activeRoot, function (node) {
+				shuffle(node.children);
+			});
+			save();
+			render();
+		});
+	}
+
+	if (activeChildren.length === 1) {
+		$("#active-header").show();
+	} else {
+		$("#active-header").hide();
+	}
+
+	var firstNode = true;
+	nodeWalk(activeRoot, function (node, $dom) {
+		var $li = $("<li />").text(node.text).linkify().appendTo($dom).prop("id", "tree-node-" + node.id);
+
+		$li.append(" ");
+		var $removeButton = $("<button />").text("X").appendTo($li);
+		$removeButton.on("click", deleteHandler(node));
+
+		$li.append(" ");
+		var $editButton = $("<button />").text("Edit").appendTo($li);
+		$editButton.on("click", editHandler(node));
+
+		if (!isInSet(activeRoot.children, node)) {
+			$li.append(" ");
+			var $uprootButton = $("<button />").text("Uproot").appendTo($li);
+			$uprootButton.on("click", function () {
+				moveNode(node, activeRoot, true /* update timestamp */);
+				save();
+				render();
+			});
+		}
+
+		if (node.children.length > 0) {
+			$li.append(" ");
+			var $uprootChildrenButton = $("<button />").text("Uproot Children").appendTo($li);
+			$uprootChildrenButton.on("click", function () {
+				node.children.slice().forEach(function (child) {
+					moveNode(child, activeRoot, true /* update timestamp */);
+				});
+				save();
+				render();
+			});
+		}
+
+		if (activeChildren.length === 1 && firstNode && currentContext) {
+			var $contextButton = $("<button />").text("Not \"" + currentContext.name + "\"");
+			$contextButton.on("click", function () {
+				tossInStaleNodes(function () {
+					node.excludedContexts.push(currentContext.name);
+				});
+				save(); render();
+			});
+			$li.append(" ").append($contextButton);
+		}
+
+		$li.append(" ");
+		var itsId = guid();
+		var $isTimeSensitive = $("<input type='checkbox' />").prop("id", itsId).prop("checked", !!node.isTimeSensitive);
+		$("<label />").prop("for", itsId).append($isTimeSensitive, " Time-sensitive").appendTo($li);
+		$isTimeSensitive.on("change", function () {
+			node.isTimeSensitive = !node.isTimeSensitive;
+			save();
+			render();
+		});
+
+		firstNode = false;
+
+		return $("<ul />").appendTo($li);
+	}, $("<ul />").appendTo($activeContent), isInCurrentContext);
+
+	$inactive.hide();
+
+	if (currentContext) {
+		$("#add-all").text("Add All to \"" + currentContext.name + "\"");
+	}
+
+	nodeWalk(activeRoot, function (node, $dom) {
+		$inactive.show();
+
+		var $li = $("<li />").text(node.text).linkify().appendTo($dom);
+
+		$li.append(" ");
+		var $removeButton = $("<button />").text("X").appendTo($li);
+		$removeButton.on("click", deleteHandler(node));
+
+		$li.append(" ");
+		var $editButton = $("<button />").text("Edit").appendTo($li);
+		$editButton.on("click", editHandler(node, true /* preserveContexts */));
+
+		if (!isInSet(activeRoot.children, node)) {
+			$li.append(" ");
+			var $uprootButton = $("<button />").text("Uproot").appendTo($li);
+			$uprootButton.on("click", function () {
+				moveNode(node, activeRoot, true /* update timestamp */);
+				save();
+				render();
+			});
+		}
+
+		$li.append(" ");
+		var $addButton = $("<button />").text("Add to \"" + currentContext.name + "\"").appendTo($li);
+		$addButton.on("click", function () {
+			removeFromSet(node.excludedContexts, currentContext.name);
+			save();
+			render();
+		});
+
+		return $("<ul />").appendTo($li);
+	}, $("<ul />").appendTo($inactiveContent), isNotInCurrentContext);
+
+	var texts = [];
+	nodeWalk(activeRoot, function (node) {
+		texts.push(node.text);
+	});
+	$("#import textarea").val(texts.join("\n"))
+	                     .prop("rows", Math.min(20, Math.floor(texts.length * 1.05)));
+
+	console.timeEnd("render");
+}
+
+var lastActionText;
+function renderTimer() {
+	function getText() {
+		var dt = (new Date) - timeOfLastAction;
+		if (dt < 3000) {
+			return "just now";
+		}
+		return moment(timeOfLastAction).fromNow();
+	}
+	var text = getText();
+	if (text !== lastActionText) {
+		$("#time-since").text("Last action: " + text);
+		lastActionText = text;
+	}
+}
+setInterval(renderTimer, 100);
+
+// task notifications
+var notificationTimer;
+function scheduleNotification(timeout) {
+	if (notificationTimer) {
+		clearTimeout(notificationTimer);
+		notificationTimer = undefined;
+	}
+
+	notificationTimer = setTimeout(showNotification, timeout);
+}
+function showNotification() {
+	var activeChildren = getActiveChildren();
+	switch (activeChildren.length) {
+	case 0: break;
+	case 1:
+		notes.post("Task Reminder", activeChildren[0].text);
+		break;
+	default:
+		notes.post("What'cha doin'?", "There are " + activeChildren.length + " top tasks right now.");
+	}
+
+	scheduleNotification(15 * 60 * 1000); // show again 15 minutes from now
+}
+
+$(function () {
+	reset();
+	load();
+	addContexts();
+	render();
+	setupNotifications();
+	scheduleNotification(2 * 60 * 1000);
+
+	$("button#uproot-1-level").on("click", function () {
+		var children = [];
+		nodeWalk(activeRoot, function (node, level) {
+			if (level === 1) {
+				children.push(node);
+			}
+			return level + 1;
+		}, 0, isInCurrentContext);
+		children.forEach(function (node) {
+			moveNode(node, activeRoot, true /* update timestamp */);
+		});
+
+		save();
+		render();
+	});
+
+	$("button#uproot-time-sensitive").on("click", function () {
+		var toUproot = [];
+		nodeWalk(activeRoot, function (node) {
+			if (node.isTimeSensitive) {
+				toUproot.push(node);
+			}
+		}, undefined /* data */, isInCurrentContext);
+		toUproot.forEach(function (node) {
+			spliceNode(node);
+			appendNode(node, activeRoot, true /* update timestamp */);
+		});
+
+		save();
+		render();
+	});
+
+	$("#context").on("change", function () {
+		render();
+	});
+
+	$("#add-all").on("click", function () {
+		nodeWalk(activeRoot, function (node) {
+			removeFromSet(node.excludedContexts, getCurrentContext().name);
+		});
+		save();
+		render();
+	});
+
+	$("#import button.import").on("click", function () {
+		var texts = $("#import textarea").val()
+		                                 .trim()
+		                                 .split(/[\r\n]+/)
+		                                 .map(function (t) { return t.trim() })
+		                                 .filter(function (t) { return t.length > 0 });
+		texts.forEach(function (text) {
+			var node = findNodeWithText(activeRoot, text);
+			if (!node) {
+				addNode(text);
+			}
+		});
+		nodeWalk(activeRoot, function (node) {
+			if (texts.indexOf(node.text) === -1) {
+				spliceNode(node);
+			}
+		});
+		save();
+		render();
+		window.scrollTo(0, 0);
+	});
+
+	$("#import button.reset").on("click", function () {
+		if (confirm("Reset for real?")) {
+			reset();
+			save();
+			render();
+		}
+	});
+
+	$("#enable-notifications").on("click", function () {
+		notes.request(function (enabled) {
+			if (enabled) {
+				$("#notifications").hide();
+			} else {
+				$("#notifications .status").text("Failed to enable notifications.");
+			}
+		});
+	});
+
+	if (notes.supported) {
+		if (notes.enabled) {
+			$("#notifications").hide();
+		}
+	} else {
+		$("#enable-notifications").prop("disabled", "disabled");
+		$("#notifications .status").text("Browser notifications are only supported in Chrome at the moment.");
+	}
+});
+</script>
+
+<p>
+<span class="toolbar-section">Filter: <select id="context"><option>&lt;all&gt;</option></select></span>
+<span class="toolbar-section">
+	<button id="uproot-1-level">Uproot 1 Level</button>
+	<button id="uproot-time-sensitive">Uproot Time-Sensitive</button>
+</span>
+<span class="toolbar-section" id="item-count"></span>
+<span class="toolbar-section" id="time-since"></span>
+
+<div id="selection">
+	<p><b>Which of these is more important to do <em>right now?</em></b><br /><small>If you expect the answer to be different later, check "Time-sensitive".</small>
+	<div class="content"></div>
+</div>
+
+<div id="active">
+	<p id="active-header"><b>The next task for you to work on is:</b>
+	<div class="content"></div>
+</div>
+
+<div id="inactive">
+	<hr>
+	<h2>Not in this context</h2>
+	<p><button id="add-all"></button>
+	<div class="content"></div>
+</div>
+
+<div id="import">
+	<hr>
+	<textarea></textarea> <button class="import">Load</button> <button class="reset">Reset</button>
+</div>
+
+<div id="notifications">
+	<button id="enable-notifications">Enable Browser Notifications</button>
+	<span class="status"></span>
+</div>
