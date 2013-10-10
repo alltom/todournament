@@ -1,31 +1,43 @@
+<!doctype html>
+<html>
+<meta charset="utf-8">
 <title>Obviously Both: You can do everything!</title>
-<link rel="stylesheet" type="text/css" href="style.css">
 <style>
+
+@import url(style.css);
+
 .toolbar-section {
 	margin-right: 30px;
 }
+
 #selection {
 	background: #eed5b7;
 	border-radius: 6px;
 	padding: 8px;
 }
+
 #selection p {
 	margin-top: 0;
 }
+
 #inactive {
 	color: gray;
 }
+
 #import textarea {
 	width: 80%;
 }
+
 label,
 label input {
 	cursor: pointer;
 }
+
 </style>
 
 <script src="jquery.min.js"></script>
 <script src="jquery.linkify.js"></script>
+<script src="d3.v3.js"></script>
 <script src="moment.min.js"></script>
 <script src="notifications.js"></script>
 <script src="shuffle.js"></script>
@@ -51,6 +63,16 @@ function nodeWalk(node, iter, data, filter) {
 	children.forEach(function (child) {
 		nodeWalk(child, iter, data, filter);
 	});
+}
+function getChildren(node, filter) {
+	var children = [];
+	nodeWalk(node, function (node, level) {
+		if (level === 1) {
+			children.push(node);
+		}
+		return level + 1;
+	}, 0, filter);
+	return children;
 }
 function nodeSize(node) {
 	var count = 0;
@@ -359,14 +381,9 @@ function render() {
 
 	$selection.hide();
 	$selectionContent.empty();
-	$activeContent.empty();
 	$inactive.hide();
-	$inactiveContent.empty();
 
-	// activeRoot.children = mergeSort(activeRoot.children, function (a, b) { return nodeSize(a) - nodeSize(b) });
-	// var activeChildren = activeRoot.children.filter(isInCurrentContext);
-	var activeChildren = getActiveChildren();
-	activeChildren = mergeSort(activeChildren, function (a, b) { return nodeSize(a) - nodeSize(b) });
+	var activeChildren = mergeSort(getActiveChildren(), function (a, b) { return nodeSize(a) - nodeSize(b) });
 
 	var totalCount = 0, topLevelCount = activeChildren.length;
 	nodeWalk(activeRoot, function () { totalCount++ }, null, isInCurrentContext);
@@ -377,86 +394,172 @@ function render() {
 		$("#item-count").append(" (" + topLevelCount + " to go)");
 	}
 
+	function nodeSelectionView(node, alternateNode) {
+		var $button = $("<button />").text("This One");
+		var $text = $("<span />").text(node.text).linkify();
+
+		$button.on("click", function () {
+			moveNode(alternateNode, node, true /* update timestamp */);
+			save(); render();
+			notes.closeLast();
+			scheduleNotification(2 * 60 * 1000);
+		});
+
+		var $div = $("<div />").appendTo($selectionContent).append($button);
+
+		if (currentContext) {
+			var $contextButton = $("<button />").text("Not \"" + currentContext.name + "\"");
+
+			$contextButton.on("click", function () {
+				tossInStaleNodes(function () {
+					node.excludedContexts.push(currentContext.name);
+				});
+				save(); render();
+				notes.closeLast(); scheduleNotification(2 * 60 * 1000);
+			});
+
+			$div.append(" ").append($contextButton);
+		}
+
+		$div.append(" ").append($text);
+
+		$div.append(" ");
+		var $removeButton = $("<button />").html("&times;").appendTo($div);
+		$removeButton.on("click", deleteHandler(node));
+
+		$div.append(" ");
+		var $editButton = $("<button />").text("Edit").appendTo($div);
+		$editButton.on("click", editHandler(node));
+
+		$div.append(" ");
+		var itsId = guid();
+		var $isTimeSensitive = $("<input type='checkbox' />").prop("id", itsId).prop("checked", !!node.isTimeSensitive);
+		$("<label />").prop("for", itsId).append($isTimeSensitive, " Time-sensitive").appendTo($div);
+		$isTimeSensitive.on("change", function () {
+			node.isTimeSensitive = !node.isTimeSensitive;
+			save();
+			render();
+		});
+
+		$div.append(" ");
+		var $go = $("<a href='#'>Reveal below</a>").appendTo($div);
+		$go.on("click", function (e) {
+			e.preventDefault();
+			$(document.body).animate({ scrollTop: $("#tree-node-" + node.id).offset().top });
+		});
+
+		return $div;
+	}
+
+	function makeNodeView(node) {
+		var $li = $(this).prop("id", "tree-node-" + node.id);
+
+		var $text = $("<span />", { text: node.text, class: "text" }).linkify();
+		$li.append($text);
+
+		$li.append(" ");
+		var $removeButton = $("<button />").text("X").appendTo($li);
+		$removeButton.on("click", deleteHandler(node));
+
+		$li.append(" ");
+		var $editButton = $("<button />").text("Edit").appendTo($li);
+		$editButton.on("click", editHandler(node));
+
+		// show uproot button if not at root
+		if (!isInSet(activeRoot.children, node)) {
+			$li.append(" ");
+			var $uprootButton = $("<button />").text("Uproot").appendTo($li);
+			$uprootButton.on("click", function () {
+				moveNode(node, activeRoot, true /* update timestamp */);
+				save();
+				render();
+			});
+		}
+
+		var children = getChildren(node);
+		if (children.length > 0) {
+			$li.append(" ");
+			var $uprootChildrenButton = $("<button />").text("Uproot Children").appendTo($li);
+			$uprootChildrenButton.on("click", function () {
+				children.slice().forEach(function (child) {
+					moveNode(child, activeRoot, true /* update timestamp */);
+				});
+				save();
+				render();
+			});
+		}
+
+		// show the "Not in 'context'" button if this is the only root being shown
+		// TODO
+		// if (activeChildren.length === 1 && firstNode && currentContext) {
+		// 	var $contextButton = $("<button />").text("Not \"" + currentContext.name + "\"");
+		// 	$contextButton.on("click", function () {
+		// 		tossInStaleNodes(function () {
+		// 			node.excludedContexts.push(currentContext.name);
+		// 		});
+		// 		save(); render();
+		// 	});
+		// 	$li.append(" ").append($contextButton);
+		// }
+
+		$li.append(" ");
+		var itsId = guid();
+		var $isTimeSensitive = $("<input />", { type: "checkbox", class: "time-sensitive" }).prop("id", itsId).prop("checked", !!node.isTimeSensitive);
+		$("<label />").prop("for", itsId).append($isTimeSensitive, " Time-sensitive").appendTo($li);
+		$isTimeSensitive.on("change", function () {
+			node.isTimeSensitive = !node.isTimeSensitive;
+			save();
+			render();
+		});
+
+		this.setAttribute("data-last-text", node.text);
+		this.setAttribute("data-last-time-sensitive", node.isTimeSensitive);
+
+		var ul = d3.select(this).append("ul");
+		var lis = ul.selectAll(function () { return ul[0][0].childNodes })
+			.data(children, nodeKey);
+
+		lis.each(updateNodeView);
+		lis.enter().append("li").each(makeNodeView);
+		lis.exit().remove();
+	}
+
+	function updateNodeView(node) {
+		var children = getChildren(node);
+
+		// update text
+		if (this.getAttribute("data-last-text") !== node.text) {
+			$(this).children("span.text").text(node.text).linkify();
+			this.setAttribute("data-last-text", node.text);
+		}
+
+		// update time-sensitive checkbox
+		if (this.getAttribute("data-last-time-sensitive") != node.isTimeSensitive) {
+			$(this).find("input.time-sensitive").first().prop("checked", !!node.isTimeSensitive);
+			this.setAttribute("data-last-time-sensitive", node.isTimeSensitive);
+		}
+
+		// update children
+		var ul = d3.select(this).select("ul");
+		var lis = ul.selectAll(function () { return ul[0][0].childNodes })
+			.data(children, nodeKey);
+
+		lis.each(updateNodeView);
+		lis.enter().append("li").each(makeNodeView);
+		lis.exit().remove();
+	}
+
+	function nodeKey(node, i) {
+		return node.id;
+	}
+
 	if (activeChildren.length > 1) {
 		$selection.show();
 
+		$selectionContent.append(nodeSelectionView(activeChildren[0], activeChildren[1]),
+		                         nodeSelectionView(activeChildren[1], activeChildren[0]));
+
 		var a = activeChildren[0], b = activeChildren[1];
-
-		var $button1 = $("<button />").text("This One");
-		var $button2 = $("<button />").text("This One");
-		var $text1 = $("<span />").text(a.text).linkify();
-		var $text2 = $("<span />").text(b.text).linkify();
-
-		$button1.on("click", function () {
-			moveNode(b, a, true /* update timestamp */);
-			save(); render();
-			notes.closeLast(); scheduleNotification(2 * 60 * 1000);
-		});
-		$button2.on("click", function () {
-			moveNode(a, b, true /* update timestamp */);
-			save(); render();
-			notes.closeLast(); scheduleNotification(2 * 60 * 1000);
-		});
-
-		var $div1 = $("<div />").appendTo($selectionContent).append($button1);
-		var $div2 = $("<div />").appendTo($selectionContent).append($button2);
-
-		if (currentContext) {
-			var $contextButton1 = $("<button />").text("Not \"" + currentContext.name + "\"");
-			var $contextButton2 = $("<button />").text("Not \"" + currentContext.name + "\"");
-
-			$contextButton1.on("click", function () {
-				tossInStaleNodes(function () {
-					a.excludedContexts.push(currentContext.name);
-				});
-				save(); render();
-				notes.closeLast(); scheduleNotification(2 * 60 * 1000);
-			});
-			$contextButton2.on("click", function () {
-				tossInStaleNodes(function () {
-					b.excludedContexts.push(currentContext.name);
-				});
-				save(); render();
-				notes.closeLast(); scheduleNotification(2 * 60 * 1000);
-			});
-
-			$div1.append(" ").append($contextButton1);
-			$div2.append(" ").append($contextButton2);
-		}
-
-		$div1.append(" ").append($text1);
-		$div2.append(" ").append($text2);
-
-		[{ item: a, $div: $div1 }, { item: b, $div: $div2 }].forEach(function (x) {
-			x.$div.append(" ");
-			var $removeButton = $("<button />").html("&times;").appendTo(x.$div);
-			$removeButton.on("click", deleteHandler(x.item));
-
-			x.$div.append(" ");
-			var $editButton = $("<button />").text("Edit").appendTo(x.$div);
-			$editButton.on("click", editHandler(x.item));
-
-			x.$div.append(" ");
-			var itsId = guid();
-			var $isTimeSensitive = $("<input type='checkbox' />").prop("id", itsId).prop("checked", !!x.item.isTimeSensitive);
-			$("<label />").prop("for", itsId).append($isTimeSensitive, " Time-sensitive").appendTo(x.$div);
-			$isTimeSensitive.on("change", function (node) {
-				return function () {
-					node.isTimeSensitive = !node.isTimeSensitive;
-					save();
-					render();
-				}
-			}(x.item));
-
-			x.$div.append(" ");
-			var $go = $("<a href='#'>Reveal below</a>").appendTo(x.$div);
-			$go.on("click", function (node) {
-				return function (e) {
-					e.preventDefault();
-					$(document.body).animate({ scrollTop: $("#tree-node-" + node.id).offset().top });
-				}
-			}(x.item));
-		});
 
 		var $both = $("<div />").appendTo($selectionContent);
 		var $bothButton = $("<button />").text("Obviously Both!").appendTo($both);
@@ -483,105 +586,13 @@ function render() {
 		$("#active-header").hide();
 	}
 
-	var firstNode = true;
-	nodeWalk(activeRoot, function (node, $dom) {
-		var $li = $("<li />").text(node.text).linkify().appendTo($dom).prop("id", "tree-node-" + node.id);
+	var ul = d3.select("#active .content ul")
+	var lis = ul.selectAll(function () { return ul[0][0].childNodes })
+		.data(getActiveChildren(), nodeKey);
 
-		$li.append(" ");
-		var $removeButton = $("<button />").text("X").appendTo($li);
-		$removeButton.on("click", deleteHandler(node));
-
-		$li.append(" ");
-		var $editButton = $("<button />").text("Edit").appendTo($li);
-		$editButton.on("click", editHandler(node));
-
-		if (!isInSet(activeRoot.children, node)) {
-			$li.append(" ");
-			var $uprootButton = $("<button />").text("Uproot").appendTo($li);
-			$uprootButton.on("click", function () {
-				moveNode(node, activeRoot, true /* update timestamp */);
-				save();
-				render();
-			});
-		}
-
-		if (node.children.length > 0) {
-			$li.append(" ");
-			var $uprootChildrenButton = $("<button />").text("Uproot Children").appendTo($li);
-			$uprootChildrenButton.on("click", function () {
-				node.children.slice().forEach(function (child) {
-					moveNode(child, activeRoot, true /* update timestamp */);
-				});
-				save();
-				render();
-			});
-		}
-
-		if (activeChildren.length === 1 && firstNode && currentContext) {
-			var $contextButton = $("<button />").text("Not \"" + currentContext.name + "\"");
-			$contextButton.on("click", function () {
-				tossInStaleNodes(function () {
-					node.excludedContexts.push(currentContext.name);
-				});
-				save(); render();
-			});
-			$li.append(" ").append($contextButton);
-		}
-
-		$li.append(" ");
-		var itsId = guid();
-		var $isTimeSensitive = $("<input type='checkbox' />").prop("id", itsId).prop("checked", !!node.isTimeSensitive);
-		$("<label />").prop("for", itsId).append($isTimeSensitive, " Time-sensitive").appendTo($li);
-		$isTimeSensitive.on("change", function () {
-			node.isTimeSensitive = !node.isTimeSensitive;
-			save();
-			render();
-		});
-
-		firstNode = false;
-
-		return $("<ul />").appendTo($li);
-	}, $("<ul />").appendTo($activeContent), isInCurrentContext);
-
-	$inactive.hide();
-
-	if (currentContext) {
-		$("#add-all").text("Add All to \"" + currentContext.name + "\"");
-	}
-
-	nodeWalk(activeRoot, function (node, $dom) {
-		$inactive.show();
-
-		var $li = $("<li />").text(node.text).linkify().appendTo($dom);
-
-		$li.append(" ");
-		var $removeButton = $("<button />").text("X").appendTo($li);
-		$removeButton.on("click", deleteHandler(node));
-
-		$li.append(" ");
-		var $editButton = $("<button />").text("Edit").appendTo($li);
-		$editButton.on("click", editHandler(node, true /* preserveContexts */));
-
-		if (!isInSet(activeRoot.children, node)) {
-			$li.append(" ");
-			var $uprootButton = $("<button />").text("Uproot").appendTo($li);
-			$uprootButton.on("click", function () {
-				moveNode(node, activeRoot, true /* update timestamp */);
-				save();
-				render();
-			});
-		}
-
-		$li.append(" ");
-		var $addButton = $("<button />").text("Add to \"" + currentContext.name + "\"").appendTo($li);
-		$addButton.on("click", function () {
-			removeFromSet(node.excludedContexts, currentContext.name);
-			save();
-			render();
-		});
-
-		return $("<ul />").appendTo($li);
-	}, $("<ul />").appendTo($inactiveContent), isNotInCurrentContext);
+	lis.each(updateNodeView);
+	lis.enter().append("li").each(makeNodeView);
+	lis.exit().remove();
 
 	var texts = [];
 	nodeWalk(activeRoot, function (node) {
@@ -734,6 +745,8 @@ $(function () {
 		$("#enable-notifications").prop("disabled", "disabled");
 		$("#notifications .status").text("Browser notifications are only supported in Chrome at the moment.");
 	}
+
+	$("<button />", { text: "render" }).appendTo(document.body).on("click", render);
 });
 </script>
 
@@ -753,7 +766,7 @@ $(function () {
 
 <div id="active">
 	<p id="active-header"><b>The next task for you to work on is:</b>
-	<div class="content"></div>
+	<div class="content"><ul></ul></div>
 </div>
 
 <div id="inactive">
