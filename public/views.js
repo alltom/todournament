@@ -267,7 +267,7 @@ var TaskView = Backbone.View.extend({
 	editClicked: function () {
 		var newText = prompt("", this.task.get("text"));
 		if (newText !== null) {
-			this.task.set("text", newText);
+			this.task.save({ text: newText });
 		}
 	},
 
