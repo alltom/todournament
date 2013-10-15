@@ -24,12 +24,6 @@ body {
 	padding: .5em;
 	margin: .5em 0;
 	background: white;
-	cursor: pointer;
-	-webkit-user-select: none;
-}
-
-.selection .selection-task:hover {
-	background: #fdf;
 }
 
 .task-list .task {

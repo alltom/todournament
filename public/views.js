@@ -75,7 +75,11 @@ var PileView = Backbone.View.extend({
 
 var SelectionView = Backbone.View.extend({
 	html: '<div class="question text-center">Which is it more important to do first? <button type="button" class="btn btn-xs btn-default shuffle">I can\'t decide!</button></div>' +
-	      '<div class="row">' +
+	      '<div class="row text-center button-row">' +
+	      '  <div class="left col-md-6"><button type="button" class="btn btn-success">This One!</button></div>' +
+	      '  <div class="right col-md-6"><button type="button" class="btn btn-success">This One!</button></div>' +
+	      '</div>' +
+	      '<div class="row task-row">' +
 	      '  <div class="left col-md-6"></div>' +
 	      '  <div class="right col-md-6"></div>' +
 	      '</div>' +
@@ -89,14 +93,14 @@ var SelectionView = Backbone.View.extend({
 
 	events: {
 		"click .shuffle" : "shuffleClicked",
-		"click .left" : "leftClicked",
-		"click .right" : "rightClicked",
+		"click .button-row .left button" : "leftClicked",
+		"click .button-row .right button" : "rightClicked",
 	},
 
 	initialize: function () {
 		this.$el.html(this.html);
-		this.$left = this.$(".left");
-		this.$right = this.$(".right");
+		this.$left = this.$(".task-row .left");
+		this.$right = this.$(".task-row .right");
 	},
 
 	render: function () {
@@ -150,9 +154,7 @@ var SelectionView = Backbone.View.extend({
 	},
 
 	clicked: function (e, greaterTask, lesserTask) {
-		if (!(e.target instanceof HTMLButtonElement)) {
-			this.trigger("compared", greaterTask, lesserTask);
-		}
+		this.trigger("compared", greaterTask, lesserTask);
 	},
 });
 
