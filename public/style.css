@@ -38,6 +38,9 @@ body {
 	border: 1px solid #9f9;
 	background: #dfd;
 }
+
+.task {
+	overflow: auto;
 }
 
 .task .tools {
