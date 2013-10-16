@@ -29,7 +29,7 @@ var PileView = Backbone.View.extend({
 		this.newTasksView.on("add-many", this.addNewTasks, this);
 		this.newTasksView.render();
 
-		this.listenTo(this.pile.tasks, "all", this.render);
+		this.listenTo(this.pile.tasks, "add remove reset", this.render);
 
 		this.pile.tasks.fetch();
 		this.pile.comparisons.fetch();
