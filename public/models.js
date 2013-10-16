@@ -66,9 +66,13 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 	taskComparator: function (task1, task2) {
 		var level1 = this._levels[task1.cid];
 		var level2 = this._levels[task2.cid];
-		if (level1 === undefined || level2 === undefined) {
-			// console.error("during comparison, level for a task was unknown", task1, level1, task2, level2);
+
+		if (level1 === undefined && level2 === undefined) {
 			return 0;
+		} else if (level1 === undefined) {
+			return 1;
+		} else if (level2 === undefined) {
+			return -1;
 		}
 		return level1 - level2;
 	},
