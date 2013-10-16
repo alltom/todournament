@@ -35,7 +35,9 @@ body {
 }
 
 .task-list.highlight-next-action .task:first-child {
-	border: 1px solid #cfc;
+	border: 1px solid #9f9;
+	background: #dfd;
+}
 }
 
 .task .tools {
