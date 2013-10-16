@@ -92,7 +92,12 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 
 		this._addChild(greaterTask.cid, lesserTask.cid);
 		removeFromSet(this._roots, lesserTask.cid);
-		this._levels[lesserTask.cid] = this._levels[greaterTask.cid] + 1; // only if worse than previous level
+
+		this._walk(lesserTask, _.bind(function (task, level) {
+			this._levels[task.cid] = level;
+			return level + 1;
+		}, this), this._levels[greaterTask.cid] + 1); // TODO: choose the max of its current level and this new level
+
 		this.potentialNextTasks = _.filter(this.potentialNextTasks, function (task) {
 			return task.cid !== lesserTask.cid;
 		}, this)
