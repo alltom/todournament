@@ -21,7 +21,7 @@ var PileView = Backbone.View.extend({
 		this.listenTo(this.selectionView, "compared", this.tasksCompared);
 		this.listenTo(this.selectionView, "shuffle", this.render);
 
-		this.taskListView = new TaskListView({ el: this.$rest, model: this.pile.tasks });
+		this.taskListView = new TaskListView({ el: this.$rest, model: this.pile });
 		this.taskListView.render();
 
 		this.newTasksView = new NewTasksView({ el: this.$newTask });
@@ -163,7 +163,8 @@ var TaskListView = Backbone.View.extend({
 	html: '',
 
 	initialize: function () {
-		this.tasks = this.model;
+		this.pile = this.model;
+		this.tasks = this.pile.tasks;
 		this.listenTo(this.tasks, "add", this.taskAdded);
 		this.listenTo(this.tasks, "remove", this.taskRemoved);
 		this.listenTo(this.tasks, "reset", this.tasksReset);
@@ -237,6 +238,7 @@ var TaskListView = Backbone.View.extend({
 var TaskView = Backbone.View.extend({
 	html: '<div class="tools">' +
 	      '<button type="button" class="btn btn-xs btn-default edit">Edit</button>' +
+	      '<button type="button" class="btn btn-xs btn-default reprioritize">Reprioritize</button>' +
 	      // '<button type="button" class="btn btn-xs btn-success done">Done!</button>' +
 	      '<button type="button" class="btn btn-xs btn-danger delete">Delete</button>' +
 	      '</div>' +
@@ -246,6 +248,7 @@ var TaskView = Backbone.View.extend({
 
 	events: {
 		"click button.edit" : "editClicked",
+		"click button.reprioritize" : "reprioritizeClicked",
 		"click button.done" : "doneClicked",
 		"click button.delete" : "deleteClicked",
 	},
@@ -270,6 +273,13 @@ var TaskView = Backbone.View.extend({
 		if (newText !== null) {
 			this.task.save({ text: newText });
 		}
+	},
+
+	reprioritizeClicked: function () {
+		var comparisons = this.model.collection.pile.comparisons.where({ lesserTaskId: this.task.id });
+		_.each(comparisons, function (comparison) {
+			comparison.invalidate();
+		});
 	},
 
 	deleteClicked: function () {

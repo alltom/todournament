@@ -33,6 +33,13 @@ var Comparison = Backbone.Model.extend({
 			this.set("createdAt", new Date);
 		}
 	},
+
+	invalidate: function () {
+		this.save({
+			invalidated: true,
+			invalidatedAt: new Date,
+		});
+	},
 });
 
 var ComparisonCollection = Backbone.Collection.extend({
@@ -87,6 +94,10 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 
 	_addComparison: function (comparison) {
 		// TODO: ignore edges that create cycles
+
+		if (comparison.get("invalidated")) {
+			return;
+		}
 
 		var greaterTask = this.tasks.get(comparison.get("greaterTaskId"));
 		var lesserTask = this.tasks.get(comparison.get("lesserTaskId"));
@@ -189,6 +200,8 @@ var Pile = Backbone.Model.extend({
 
 		this.tasks.comparator = this.taskForest.taskComparator;
 		this.listenTo(this.taskForest, "recalculate", this._recalculated);
+
+		this.tasks.pile = this.comparisons.pile = this;
 	},
 
 	_recalculated: function () {
