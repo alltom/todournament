@@ -217,6 +217,7 @@ var TaskListView = Backbone.View.extend({
 
 	tasksSorted: function () {
 		var viewsByCid = _.indexBy(this.taskViews, function (view) {
+			view.$el.detach();
 			return view.task.cid;
 		});
 
@@ -224,7 +225,7 @@ var TaskListView = Backbone.View.extend({
 			if (viewsByCid[task.cid]) {
 				return viewsByCid[task.cid];
 			} else {
-				console.error("making new view");
+				console.error("making new view during sort");
 				return new TaskView({ model: task });
 			}
 		});
