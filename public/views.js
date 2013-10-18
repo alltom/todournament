@@ -25,7 +25,6 @@ var PileView = Backbone.View.extend({
 		this.taskListView.render();
 
 		this.newTasksView = new NewTasksView({ el: this.$newTask });
-		this.newTasksView.on("add", this.addNewTask, this);
 		this.newTasksView.on("add-many", this.addNewTasks, this);
 		this.newTasksView.render();
 
@@ -54,10 +53,6 @@ var PileView = Backbone.View.extend({
 		this.taskListView.render();
 
 		return this;
-	},
-
-	addNewTask: function (text) {
-		this.pile.tasks.create({ text: text });
 	},
 
 	addNewTasks: function (texts) {
@@ -291,13 +286,6 @@ var TaskView = Backbone.View.extend({
 var NewTasksView = Backbone.View.extend({
 	html: '<form class="form-inline" role="form">' +
 	      '<div class="form-group">' +
-	      '  <label class="sr-only" for="new-task-text">One task</label>' +
-	      '  <input type="text" class="form-control" id="new-task-text" placeholder="One task">' +
-	      '</div>' +
-	      '<button type="submit" class="btn btn-default add-single">Add</button>' +
-	      '</form>' +
-	      '<form class="form-inline" role="form">' +
-	      '<div class="form-group">' +
 	      '  <label class="sr-only" for="new-task-textarea">Several tasks, one per line</label>' +
 	      '  <textarea class="form-control" rows="4" cols="60" id="new-task-textarea" placeholder="Several tasks, one per line"></textarea>' +
 	      '</div>' +
@@ -307,7 +295,6 @@ var NewTasksView = Backbone.View.extend({
 	className: "new-task",
 
 	events: {
-		"click button.add-single" : "addSingleTask",
 		"click button.add-several" : "addSeveralTasks",
 	},
 
@@ -316,12 +303,6 @@ var NewTasksView = Backbone.View.extend({
 	},
 
 	render: function () {
-	},
-
-	addSingleTask: function (e) {
-		e.preventDefault();
-		this.trigger("add", this.$("#new-task-text").val());
-		this.$("#new-task-text").val("").focus();
 	},
 
 	addSeveralTasks: function (e) {
