@@ -54,3 +54,7 @@ body {
 .new-task form {
 	margin-bottom: 10px;
 }
+
+.new-task textarea {
+	margin-bottom: 10px;
+}

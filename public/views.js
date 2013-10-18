@@ -291,28 +291,40 @@ var TaskView = Backbone.View.extend({
 
 var NewTasksView = Backbone.View.extend({
 	html: '<form class="form-inline" role="form">' +
-	      '<div class="form-group">' +
-	      '  <label class="sr-only" for="new-task-textarea">Several to-do items, one per line</label>' +
-	      '  <textarea class="form-control" rows="4" cols="60" id="new-task-textarea" placeholder="Several tasks, one per line"></textarea>' +
-	      '</div>' +
-	      '<button type="submit" class="btn btn-default add-several">Add</button>' +
+	      '<label class="sr-only" for="new-task-textarea">Several to-do items, one per line</label>' +
+	      '<textarea class="form-control" rows="4" cols="60" id="new-task-textarea" placeholder="Several tasks, one per line"></textarea>' +
+	      '<button type="submit" class="btn btn-default add-several">Add Tasks</button>' +
 	      '</form>',
 
 	className: "new-task",
 
 	events: {
 		"click button.add-several" : "addSeveralTasks",
+		"input textarea#new-task-textarea" : "textChanged",
+		"propertychange textarea#new-task-textarea" : "textChanged",
 	},
 
 	initialize: function () {
 		this.$el.html(this.html);
+		this.$addButton = this.$("button.add-several");
 	},
 
 	render: function () {
 	},
 
+	textChanged: function () {
+		var texts = this._texts();
+		this.$addButton.text("Add " + texts.length + " Task" + (texts.length === 1 ? "" : "s"));
+	},
+
 	addSeveralTasks: function (e) {
 		e.preventDefault();
+		var texts = this._texts();
+		this.trigger("add-many", texts);
+		this.$("#new-task-textarea").val("").focus();
+	},
+
+	_texts: function () {
 		var texts = [];
 		_.each(this.$("#new-task-textarea").val().split(/[\r\n]+/), function (text) {
 			text = text.trim();
@@ -320,7 +332,6 @@ var NewTasksView = Backbone.View.extend({
 				texts.push(text);
 			}
 		}, this);
-		this.trigger("add-many", texts);
-		this.$("#new-task-textarea").val("").focus();
+		return texts;
 	},
 });
