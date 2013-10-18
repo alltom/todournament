@@ -2,9 +2,9 @@ var PileView = Backbone.View.extend({
 	html: '<div class="well selection" />' +
 	      // '<h3>Any of these could be your next action:</h3>' +
 	      // '<div class="nexts"></ul>' +
-	      '<h3>Here are your tasks in approximate order:</h3>' +
+	      '<h3 class="tasks">Here are your tasks in approximate order:</h3>' +
 	      '<div class="rest task-list"></div>' +
-	      '<h3>Add more tasks:</h3>' +
+	      '<h3 class="add">Add tasks:</h3>' +
 	      '<div class="new-task"></div>',
 
 	initialize: function () {
@@ -15,6 +15,8 @@ var PileView = Backbone.View.extend({
 		this.$newTask = this.$(".new-task");
 		// this.$nexts = this.$(".nexts");
 		this.$rest = this.$(".rest");
+		this.$tasksHeader = this.$("h3.tasks");
+		this.$addHeader = this.$("h3.add");
 
 		this.selectionView = new SelectionView({ el: this.$selection[0] });
 		this.selectionView.render();
@@ -51,6 +53,9 @@ var PileView = Backbone.View.extend({
 		}
 
 		this.taskListView.render();
+
+		this.$tasksHeader.toggle(this.pile.tasks.length > 0);
+		this.$addHeader.text(this.pile.tasks.length > 0 ? "Add more tasks:" : "Add tasks:")
 
 		return this;
 	},
