@@ -291,7 +291,7 @@ var TaskView = Backbone.View.extend({
 var NewTasksView = Backbone.View.extend({
 	html: '<form class="form-inline" role="form">' +
 	      '<div class="form-group">' +
-	      '  <label class="sr-only" for="new-task-textarea">Several tasks, one per line</label>' +
+	      '  <label class="sr-only" for="new-task-textarea">Several to-do items, one per line</label>' +
 	      '  <textarea class="form-control" rows="4" cols="60" id="new-task-textarea" placeholder="Several tasks, one per line"></textarea>' +
 	      '</div>' +
 	      '<button type="submit" class="btn btn-default add-several">Add</button>' +
