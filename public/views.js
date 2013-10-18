@@ -75,10 +75,11 @@ var PileView = Backbone.View.extend({
 });
 
 var SelectionView = Backbone.View.extend({
-	html: '<div class="question text-center">Which is it more important to do first? <button type="button" class="btn btn-xs btn-default shuffle">I can\'t decide between these two!</button></div>' +
+	html: '<div class="question text-center">Which is it more important to do first?</div>' +
 	      '<div class="row text-center button-row">' +
-	      '  <div class="left col-md-6"><button type="button" class="btn btn-success">This One!</button></div>' +
-	      '  <div class="right col-md-6"><button type="button" class="btn btn-success">This One!</button></div>' +
+	      '  <div class="left col-md-5"><button type="button" class="btn btn-success">This One!</button></div>' +
+	      '  <div class="col-md-2"><button type="button" class="btn btn-xs btn-default shuffle">I can\'t decide!</button></div>' +
+	      '  <div class="right col-md-5"><button type="button" class="btn btn-success">This One!</button></div>' +
 	      '</div>' +
 	      '<div class="row task-row">' +
 	      '  <div class="left col-md-6"></div>' +
