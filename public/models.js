@@ -5,6 +5,12 @@ var Task = Backbone.Model.extend({
 		text: "",
 		excludedContexts: [], // context names
 	},
+}, {
+	timeScales: [
+		{ id: "today",      label: "Today", range: 24 * 60 * 60 },
+		{ id: "this-week",  label: "This Week", range: 7 * 24 * 60 * 60 },
+		{ id: "this-month", label: "This Month", range: 4 * 7 * 24 * 60 * 60 },
+	],
 });
 
 var TaskCollection = Backbone.Collection.extend({

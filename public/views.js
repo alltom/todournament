@@ -239,6 +239,7 @@ var TaskListView = Backbone.View.extend({
 
 var TaskView = Backbone.View.extend({
 	html: '<div class="tools">' +
+	      '<select></select>' +
 	      '<button type="button" class="btn btn-xs btn-default edit">Edit</button>' +
 	      '<button type="button" class="btn btn-xs btn-default reprioritize">Reprioritize</button>' +
 	      // '<button type="button" class="btn btn-xs btn-success done">Done!</button>' +
@@ -253,21 +254,48 @@ var TaskView = Backbone.View.extend({
 		"click button.reprioritize" : "reprioritizeClicked",
 		"click button.done" : "doneClicked",
 		"click button.delete" : "deleteClicked",
+		"change select" : "timeScaleChanged",
 	},
 
 	initialize: function () {
 		this.task = this.model;
 
 		this.$el.html(this.html);
+		this.$timeScaleSelect = this.$("select");
 		this.$text = this.$("span.text");
 
-		this.listenTo(this.task, "change:text", this.textChanged);
+		this.$timeScaleSelect.append("<option />");
+		_.each(Task.timeScales, function (scale) {
+			var $option = $("<option />", {
+				value: scale.id,
+				text: scale.label,
+			});
+			this.$timeScaleSelect.append($option);
+		}, this);
 
-		this.textChanged();
+		this.listenTo(this.task, "change:text", this.textUpdated);
+		this.listenTo(this.task, "change:timeScaleId", this.textUpdated);
+
+		this.timeScaleUpdated();
+		this.textUpdated();
 	},
 
-	textChanged: function () {
+	timeScaleUpdated: function () {
+		var $options = this.$timeScaleSelect.children("option");
+		$options.prop("selected", false);
+
+		if (this.task.has("timeScaleId")) {
+			$options.filter("[value=" + this.task.get("timeScaleId") + "]")
+			        .prop("selected", true);
+		}
+	},
+
+	textUpdated: function () {
 		this.$text.text(this.task.get("text")).linkify();
+	},
+
+	timeScaleChanged: function () {
+		this.task.save({ timeScaleId: this.$timeScaleSelect.val() });
 	},
 
 	editClicked: function () {
