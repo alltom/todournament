@@ -43,7 +43,7 @@ function fetchedPiles(storageName) {
 		return d.promise();
 	}
 
-	piles.fetch().then(function () {
+	piles.fetch({reset: true}).then(function () {
 		d.resolve(piles);
 	}, function () {
 		d.reject("Could not fetch \"" + storageName + "\" piles");

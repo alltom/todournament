@@ -33,8 +33,8 @@ var PileView = Backbone.View.extend({
 		this.listenTo(this.pile.tasks, "add remove reset", this.render);
 		this.listenTo(this.pile.comparisons, "add remove reset change", this.render);
 
-		this.pile.tasks.fetch();
-		this.pile.comparisons.fetch();
+		this.pile.tasks.fetch({reset: true});
+		this.pile.comparisons.fetch({reset: true});
 	},
 
 	render: function () {
