@@ -84,6 +84,14 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		return level1 - level2;
 	},
 
+	subtreeList: function (task) {
+		var list = [];
+		this._walk(task, function (child) { list.push(child) });
+		list.shift(); // remove the task itself
+		list.sort(this.taskComparator);
+		return list;
+	},
+
 	_addTask: function (task) {
 		this._children[task.cid] = [];
 		this._parents[task.cid] = [];
