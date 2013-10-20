@@ -18,20 +18,16 @@ body {
 	margin-bottom: 10px;
 }
 
-.selection .selection-task {
-	border: 1px solid #ccc;
-	border-radius: 8px;
-	padding: .5em;
+.selection .task {
 	margin: .5em 0;
-	background: white;
+}
+
+.selection .rest .task .tools {
+	display: none;
 }
 
 .task-list .task {
-	border: 1px solid #ccc;
-	border-radius: 8px;
-	padding: .5em;
 	margin: .2em;
-	overflow: hidden;
 }
 
 .task-list.highlight-next-action .task:first-child {
@@ -40,7 +36,11 @@ body {
 }
 
 .task {
+	border: 1px solid #ccc;
+	border-radius: 8px;
+	padding: .5em;
 	overflow: auto;
+	background: white;
 }
 
 .task .tools {
