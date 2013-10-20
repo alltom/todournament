@@ -22,6 +22,10 @@ body {
 	margin: .5em 0;
 }
 
+.selection .task .tools .reprioritize {
+	display: none;
+}
+
 .selection .rest .task .tools {
 	display: none;
 }
