@@ -55,7 +55,7 @@ var PileView = Backbone.View.extend({
 		this.taskListView.render();
 
 		this.$tasksHeader.toggle(this.pile.tasks.length > 0);
-		this.$addHeader.text(this.pile.tasks.length > 0 ? "Add more tasks:" : "Add tasks:")
+		this.$addHeader.text(this.pile.tasks.length > 0 ? "Add more tasks:" : "Add tasks:");
 
 		return this;
 	},
