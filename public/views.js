@@ -65,9 +65,12 @@ var PileView = Backbone.View.extend({
 		return this;
 	},
 
-	addNewTasks: function (texts) {
+	addNewTasks: function (texts, timeScaleId) {
 		_.each(texts, function (text) {
-			this.pile.tasks.create({ text: text });
+			var task = this.pile.tasks.create({
+				text: text,
+				timeScaleId: timeScaleId,
+			});
 		}, this);
 	},
 
@@ -351,7 +354,8 @@ var NewTasksView = Backbone.View.extend({
 	html: '<form class="form-inline" role="form">' +
 	      '<label class="sr-only" for="new-task-textarea">Several to-do items, one per line</label>' +
 	      '<textarea class="form-control" rows="4" cols="60" id="new-task-textarea" placeholder="Several tasks, one per line"></textarea>' +
-	      '<button type="submit" class="btn btn-default add-several">Add Tasks</button>' +
+	      '<button type="submit" class="btn btn-default add-several">Add Tasks</button> ' +
+	      '<select class="timescale form-control" style="width: 12em"></select>' +
 	      '</form>',
 
 	className: "new-task",
@@ -365,6 +369,16 @@ var NewTasksView = Backbone.View.extend({
 	initialize: function () {
 		this.$el.html(this.html);
 		this.$addButton = this.$("button.add-several");
+		this.$timeScaleSelect = this.$("select.timescale");
+
+		this.$timeScaleSelect.append("<option />");
+		_.each(Task.timeScales, function (scale) {
+			var $option = $("<option />", {
+				value: scale.id,
+				text: scale.label,
+			});
+			this.$timeScaleSelect.append($option);
+		}, this);
 	},
 
 	render: function () {
@@ -378,8 +392,10 @@ var NewTasksView = Backbone.View.extend({
 	addSeveralTasks: function (e) {
 		e.preventDefault();
 		var texts = this._texts();
-		this.trigger("add-many", texts);
+		this.trigger("add-many", texts, this.$timeScaleSelect.val());
+		this.$timeScaleSelect.val("");
 		this.$("#new-task-textarea").val("").focus();
+		this.textChanged();
 	},
 
 	_texts: function () {
