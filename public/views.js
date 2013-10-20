@@ -278,7 +278,10 @@ var TaskView = Backbone.View.extend({
 	},
 
 	reprioritizeClicked: function () {
-		var comparisons = this.model.collection.pile.comparisons.where({ lesserTaskId: this.task.id });
+		var comparisons = [].concat(
+			this.model.collection.pile.comparisons.where({ lesserTaskId: this.task.id }),
+			this.model.collection.pile.comparisons.where({ greaterTaskId: this.task.id })
+		);
 		_.each(comparisons, function (comparison) {
 			comparison.invalidate();
 		});
