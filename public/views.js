@@ -2,7 +2,7 @@ var PileView = Backbone.View.extend({
 	html: '<div class="well selection" />' +
 	      // '<h3>Any of these could be your next action:</h3>' +
 	      // '<div class="nexts"></ul>' +
-	      '<h3 class="tasks">Here are your tasks in approximate order: <button type="button" class="btn btn-xs btn-default reprioritize-top">Reprioritize 10</button></h3>' +
+	      '<h3 class="tasks">Here are your tasks in approximate order: <button type="button" class="btn btn-xs btn-default reprioritize-top">Reprioritize Due Tasks</button></h3>' +
 	      '<div class="rest task-list"></div>' +
 	      '<h3 class="add">Add tasks:</h3>' +
 	      '<div class="new-task"></div>',
@@ -82,12 +82,24 @@ var PileView = Backbone.View.extend({
 	},
 
 	reprioritizeTopClicked: function () {
+		var self = this;
+
 		var comparisons = this.pile.comparisons.where({invalidated: false});
-		var sortedComparisons = _.sortBy(comparisons, function (comparison) {
+		var sortedComparisons = _.sortBy(comparisons, function (c) { return -dueness(c) }, this);
+
+		var actuallyDue = sortedComparisons.filter(function (c) { return dueness(c) > 1 });
+		var closestToDue = sortedComparisons.slice(0, 10);
+		var toInvalidate = actuallyDue.length > closestToDue.length ? actuallyDue : closestToDue;
+
+		_.each(toInvalidate, function (comparison) {
+			comparison.invalidate();
+		});
+
+		function dueness(comparison) {
 			var age = (new Date) - Date.parse(comparison.get("createdAt"));
 			var range = 4 * 7 * 24 * 60 * 60 * 1000; // default range: 1 month
 
-			var greaterTask = this.pile.tasks.get(comparison.get("greaterTaskId"));
+			var greaterTask = self.pile.tasks.get(comparison.get("greaterTaskId"));
 			if (greaterTask) {
 				var timeScaleId = greaterTask.get("timeScaleId");
 				var timeScale = _.filter(Task.timeScales, function (scale) { return scale.id === timeScaleId })[0];
@@ -96,11 +108,8 @@ var PileView = Backbone.View.extend({
 				}
 			}
 
-			return -(age / range);
-		}, this);
-		_.each(sortedComparisons.slice(0, 10), function (comparison) {
-			comparison.invalidate();
-		});
+			return age / range;
+		}
 	},
 });
 
