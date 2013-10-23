@@ -69,9 +69,11 @@ function TaskForest(tasks, comparisons) {
 	this.taskComparator = _.bind(this.taskComparator, this);
 
 	this.listenTo(tasks, "add", this._addTask);
+	this.listenTo(tasks, "add", this._triggerRecalculate);
 	this.listenTo(tasks, "remove reset", this._recalculate);
 
 	this.listenTo(comparisons, "add", this._addComparison);
+	this.listenTo(comparisons, "add", this._triggerRecalculate);
 	this.listenTo(comparisons, "remove reset sort change:invalidated", this._recalculate);
 }
 _.extend(TaskForest.prototype, Backbone.Events, {
@@ -97,14 +99,16 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		return list;
 	},
 
+	_triggerRecalculate: function () {
+		this.trigger("recalculate");
+	},
+
 	_addTask: function (task) {
 		this._children[task.cid] = [];
 		this._parents[task.cid] = [];
 		this._roots.push(task.cid);
 		this._levels[task.cid] = 0;
 		this.potentialNextTasks.push(task);
-
-		this.trigger("recalculate");
 	},
 
 	_addComparison: function (comparison) {
@@ -131,8 +135,6 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this.potentialNextTasks = _.filter(this.potentialNextTasks, function (task) {
 			return task.cid !== lesserTask.cid;
 		}, this);
-
-		this.trigger("recalculate");
 	},
 
 	_recalculate: function () {
