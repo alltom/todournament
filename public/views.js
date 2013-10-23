@@ -86,14 +86,8 @@ var PileView = Backbone.View.extend({
 
 		var comparisons = this.pile.comparisons.where({invalidated: false});
 		var sortedComparisons = _.sortBy(comparisons, function (c) { return -dueness(c) }, this);
-
-		var actuallyDue = sortedComparisons.filter(function (c) { return dueness(c) > 1 });
 		var closestToDue = sortedComparisons.slice(0, 10);
-		var toInvalidate = actuallyDue.length > closestToDue.length ? actuallyDue : closestToDue;
-
-		_.each(toInvalidate, function (comparison) {
-			comparison.invalidate();
-		});
+		_.invoke(closestToDue, "invalidate");
 
 		function dueness(comparison) {
 			var age = (new Date) - Date.parse(comparison.get("createdAt"));
