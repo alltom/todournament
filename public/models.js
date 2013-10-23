@@ -132,20 +132,14 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 	},
 
 	_recalculate: function () {
-		console.log("recalculate", this.tasks.length, this.comparisons.length);
-
 		this._children = {}; // id -> [id, ...]
 		this._parents = {}; // id -> [id, ...]
 		this._roots = []; // to be filled in at the end
 		this._levels = {}; // id -> level (0-indexed)
 		this.potentialNextTasks = []; // [task, ...]
 
-		console.time("calculate forest");
-
 		this.tasks.each(this._addTask, this);
 		this.comparisons.each(this._addComparison, this);
-
-		console.timeEnd("calculate forest");
 
 		this.trigger("recalculate");
 
