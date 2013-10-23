@@ -81,12 +81,14 @@ var router = new (Backbone.Router.extend({
 	},
 
 	pile: function (storageName, id) {
-		$("#loading").hide();
-
+		$("#pile-view").empty();
 		fetchedPiles(storageName).then(gotPiles, showError);
 
 		function gotPiles(piles) {
+			$("#loading").hide();
+
 			var pile = piles.get(id);
+
 			if (pile) {
 				new PileView({
 					el: $("#pile-view")[0],
