@@ -8,6 +8,7 @@ LocalStore.prototype = {
 		collection.storageName = "localStorage";
 		collection.localStorage = this.storage;
 	},
+
 	makeStore: function (name) {
 		return new LocalStore(name);
 	},
