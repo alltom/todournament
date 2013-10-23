@@ -72,7 +72,7 @@ function TaskForest(tasks, comparisons) {
 	this.listenTo(tasks, "remove reset", this._recalculate);
 
 	this.listenTo(comparisons, "add", this._addComparison);
-	this.listenTo(comparisons, "remove reset sort change", this._recalculate);
+	this.listenTo(comparisons, "remove reset sort change:invalidated", this._recalculate);
 }
 _.extend(TaskForest.prototype, Backbone.Events, {
 	taskComparator: function (task1, task2) {
