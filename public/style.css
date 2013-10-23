@@ -6,6 +6,10 @@ body {
 	display: none;
 }
 
+.navbar-brand span {
+	color: black;
+}
+
 .selection {
 	margin-top: 20px;
 	padding-bottom: 0;

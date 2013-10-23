@@ -266,13 +266,12 @@ var PileCollection = Backbone.Collection.extend({
 				}
 				return jsons;
 			}, []));
-			console.log("[import] pruned " + (comparisonJSONs.length - pile.comparisons.length) + " comparisons");
+			console.log("[import] pruned " + (comparisonJSONs.length - pile.comparisons.length) + " of " + comparisonJSONs.length + " comparisons");
 			$.when.apply($, pile.comparisons.invoke("save"))
 				.then(done, bail("failed to save all the comparisons"));
 		}
 
 		function done() {
-			console.log("done");
 			d.resolve(pile);
 		}
 

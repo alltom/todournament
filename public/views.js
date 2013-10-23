@@ -1,5 +1,6 @@
 var PileView = Backbone.View.extend({
-	html: '<div class="well selection" />' +
+	html: '<div class="navigation" />' +
+	      '<div class="well selection" />' +
 	      // '<h3>Any of these could be your next action:</h3>' +
 	      // '<div class="nexts"></ul>' +
 	      '<h3 class="tasks">Here are your tasks in approximate order: <button type="button" class="btn btn-xs btn-default reprioritize-top">Reprioritize Due Tasks</button></h3>' +
@@ -22,6 +23,8 @@ var PileView = Backbone.View.extend({
 		this.$rest = this.$(".rest");
 		this.$tasksHeader = this.$("h3.tasks");
 		this.$addHeader = this.$("h3.add");
+
+		this.navBarView = new NavBarView({ el: this.$(".navigation"), model: this.pile });
 
 		this.selectionView = new SelectionView({ el: this.$selection[0] });
 		this.selectionView.render();
@@ -107,6 +110,98 @@ var PileView = Backbone.View.extend({
 
 			return age / range;
 		}
+	},
+});
+
+var NavBarView = Backbone.View.extend({
+	html: '<nav class="navbar navbar-default" role="navigation">' +
+	      '<div class="navbar-header">' +
+	      '  <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">' +
+	      '    <span class="sr-only">Toggle navigation</span>' +
+	      '    <span class="icon-bar"></span>' +
+	      '    <span class="icon-bar"></span>' +
+	      '    <span class="icon-bar"></span>' +
+	      '  </button>' +
+	      '  <a class="navbar-brand" href="#"><span>Todo</span>urnament</a>' +
+	      '</div>' +
+	      '<div class="collapse navbar-collapse navbar-ex1-collapse">' +
+	      '  <ul class="nav navbar-nav">' +
+	      // '  <form class="navbar-form navbar-left">' +
+	      // '    <div class="form-group">' +
+	      // '      <select class="form-control"><option>Foo bar</option></select>' +
+	      // '    </div>' +
+	      // '  </form>' +
+	      // '    <li class="dropdown">' +
+	      // '      <a href="#" class="dropdown-toggle" data-toggle="dropdown">Utility <b class="caret"></b></a>' +
+	      // '      <ul class="dropdown-menu">' +
+	      // '        <li><a href="#">Import</a></li>' +
+	      // '        <li><a href="#">Export</a></li>' +
+	      // '      </ul>' +
+	      // '    </li>' +
+	      '    <li><button type="button" class="btn btn-default navbar-btn export">Import/Export</button></li>' +
+	      '  </ul>' +
+	      '</div>' +
+	      '</nav>',
+
+	events: {
+		"click .export" : "importExportClicked",
+	},
+
+	initialize: function () {
+		this.pile = this.model;
+		this.$el.html(this.html);
+	},
+
+	importExportClicked: function () {
+		var view = new ImportExportView({ model: this.pile });
+		view.$el.modal();
+	},
+});
+
+var ImportExportView = Backbone.View.extend({
+	html: '<div class="modal-dialog">' +
+	      '  <div class="modal-content">' +
+	      '    <div class="modal-header">' +
+	      '      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
+	      '      <h4 class="modal-title">Import/Export</h4>' +
+	      '    </div>' +
+	      '    <div class="modal-body">' +
+	      '      <form role="form">' +
+	      '        <div class="form-group">' +
+	      '          <p>All your tasks and prioritization data is encoded as JSON below:</p>' +
+	      '          <textarea class="form-control" rows="8"></textarea>' +
+	      '        </div>' +
+	      '      </form>' +
+	      '    </div>' +
+	      '    <div class="modal-footer">' +
+	      '      <button type="button" class="btn btn-default import-copy">Import as a Copy</button>' +
+	      '      <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>' +
+	      '    </div>' +
+	      '  </div><!-- /.modal-content -->' +
+	      '</div><!-- /.modal-dialog -->',
+
+	className: "modal fade",
+
+	events: {
+		"click .import-copy" : "importCopyClicked",
+	},
+
+	initialize: function () {
+		this.pile = this.model;
+		this.$el.html(this.html);
+
+		this.$("textarea").val(JSON.stringify(this.pile.toJSON(), null, "  "));
+	},
+
+	importCopyClicked: function () {
+		var piles = this.pile.collection;
+		var pileJSON = JSON.parse(this.$("textarea").val());
+		piles.clonePileFromJSON(pileJSON).then(_.bind(function (pile) {
+			this.$el.modal("hide");
+			goToPile(pile);
+		}, this), function (reason) {
+			console.log("failed to clone pile", reason); // TODO: tell the user
+		});
 	},
 });
 
