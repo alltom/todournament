@@ -103,6 +103,8 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this._roots.push(task.cid);
 		this._levels[task.cid] = 0;
 		this.potentialNextTasks.push(task);
+
+		this.trigger("recalculate");
 	},
 
 	_addComparison: function (comparison) {
@@ -128,7 +130,9 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 
 		this.potentialNextTasks = _.filter(this.potentialNextTasks, function (task) {
 			return task.cid !== lesserTask.cid;
-		}, this)
+		}, this);
+
+		this.trigger("recalculate");
 	},
 
 	_recalculate: function () {
