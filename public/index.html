@@ -72,7 +72,10 @@ var router = new (Backbone.Router.extend({
 					});
 				}
 			} else {
-				goToPile(piles.at(0));
+				var pile = piles.at(0);
+				$.when(pile.tasks.fetch({reset: true}), pile.comparisons.fetch({reset: true})).done(function () {
+					goToPile(pile);
+				}).fail(showError);
 			}
 		}
 	},
