@@ -90,6 +90,9 @@ var router = new (Backbone.Router.extend({
 			var pile = piles.get(id);
 
 			if (pile) {
+				pile.tasks.fetch({reset: true});
+				pile.comparisons.fetch({reset: true});
+
 				new PileView({
 					el: $("#pile-view")[0],
 					model: pile,
