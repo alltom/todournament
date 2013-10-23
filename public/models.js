@@ -214,6 +214,13 @@ var Pile = Backbone.Model.extend({
 	_recalculated: function () {
 		this.tasks.sort();
 	},
+
+	toJSON: function () {
+		var o = Backbone.Model.prototype.toJSON.apply(this, arguments);
+		o.tasks = this.tasks.toJSON();
+		o.comparisons = this.comparisons.toJSON();
+		return o;
+	},
 });
 
 var PileCollection = Backbone.Collection.extend({
@@ -222,5 +229,59 @@ var PileCollection = Backbone.Collection.extend({
 	constructor: function (store) {
 		store.applyToCollection(this);
 		Backbone.Collection.apply(this, Array.prototype.slice.call(arguments, 1));
+	},
+
+	// per Backbone.js convention, that's an object, not a string
+	clonePileFromJSON: function (json) {
+		var d = new $.Deferred;
+
+		var taskJSONs = json.tasks, comparisonJSONs = json.comparisons;
+		var oldIds = _.pluck(taskJSONs, "id");
+		delete json.id;
+		delete json.tasks;
+		delete json.comparisons;
+
+		var pile = this.add(json);
+		pile.save().then(saveTasks, bail("Could not save pile"));
+
+		function saveTasks() {
+			pile.tasks.reset(_.map(taskJSONs, function (taskJSON) {
+				delete taskJSON.id;
+				return taskJSON;
+			}));
+			$.when.apply($, pile.tasks.invoke("save"))
+				.then(saveComparisons, bail("failed to save all the tasks"));
+		}
+
+		function saveComparisons() {
+			var newIds = pile.tasks.pluck("id");
+			var idMap = _.object(oldIds, newIds);
+
+			pile.comparisons.reset(_.reduce(comparisonJSONs, function (jsons, comparisonJSON) {
+				delete comparisonJSON.id;
+				comparisonJSON.lesserTaskId = idMap[comparisonJSON.lesserTaskId];
+				comparisonJSON.greaterTaskId = idMap[comparisonJSON.greaterTaskId];
+				if (comparisonJSON.lesserTaskId && comparisonJSON.greaterTaskId) {
+					jsons.push(comparisonJSON);
+				}
+				return jsons;
+			}, []));
+			console.log("[import] pruned " + (comparisonJSONs.length - pile.comparisons.length) + " comparisons");
+			$.when.apply($, pile.comparisons.invoke("save"))
+				.then(done, bail("failed to save all the comparisons"));
+		}
+
+		function done() {
+			console.log("done");
+			d.resolve(pile);
+		}
+
+		function bail(reason) {
+			return function () {
+				d.reject(reason);
+			};
+		}
+
+		return d.promise();
 	},
 });
