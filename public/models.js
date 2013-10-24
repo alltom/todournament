@@ -93,20 +93,21 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 	},
 
 	potentialNextTasks: function () {
-		var nexts = [];
+		var nexts = this.tasks.map(function (t) { return t.cid });
 
 		this._walk(null, function (task, level) {
 			if (task.has("waitingFor")) {
+				removeFromSet(nexts, task.cid);
 				return level;
 			} else {
-				if (level === 0) {
-					nexts.push(task);
+				if (level > 0) {
+					removeFromSet(nexts, task.cid);
 				}
 				return level + 1;
 			}
 		}, 0);
 
-		return nexts;
+		return _.map(nexts, function (cid) { return this.tasks.get(cid) }, this);
 	},
 
 	_triggerRecalculate: function () {
@@ -117,7 +118,6 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this._children[task.cid] = [];
 		this._parents[task.cid] = [];
 		this._roots.push(task.cid);
-		this._levels[task.cid] = 0;
 	},
 
 	_addComparison: function (comparison) {
@@ -132,28 +132,18 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		}
 
 		if (_.contains(this._allParents(greaterTask.cid), lesserTask.cid)) {
-			console.log("ignoring comparison that would create a cycle");
+			console.log("ignoring comparison that would create a cycle", greaterTask.get("text"), ">", lesserTask.get("text"));
 			return;
 		}
 
-		var oldLevelForLesserTask = this._levels[lesserTask.cid];
-		var newLevelForLesserTask = this._levels[greaterTask.cid] + 1;
-		if (newLevelForLesserTask > oldLevelForLesserTask) {
-			this._moveChild(lesserTask.cid, greaterTask.cid);
-			removeFromSet(this._roots, lesserTask.cid);
-
-			this._walk(lesserTask, _.bind(function (child, level) {
-				this._levels[child.cid] = level;
-				return level + 1;
-			}, this), newLevelForLesserTask)
-		}
+		this._addChild(greaterTask.cid, lesserTask.cid);
+		removeFromSet(this._roots, lesserTask.cid);
 	},
 
 	_recalculate: function () {
 		this._children = {}; // cid -> [cid, ...]
 		this._parents = {}; // cid -> [cid, ...]
 		this._roots = []; // [cid, ...]
-		this._levels = {}; // cid -> int
 
 		this.tasks.each(this._addTask, this);
 		this.comparisons.each(this._addComparison, this);
