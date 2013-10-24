@@ -38,6 +38,7 @@ body {
 	margin: .2em;
 }
 
+.selection .task .tools .ready,
 .task-list.wf .tools .put-off,
 .task-list.rest .tools .ready {
 	display: none;
