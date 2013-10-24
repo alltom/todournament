@@ -383,10 +383,10 @@ var TaskView = Backbone.View.extend({
 	      '<button type="button" class="btn btn-xs btn-default reprioritize">Reprioritize</button>' +
 	      '<button type="button" class="btn btn-xs btn-warning put-off">Put Off</button>' +
 	      '<button type="button" class="btn btn-xs btn-success ready">Ready!</button>' +
-	      // '<button type="button" class="btn btn-xs btn-success done">Done!</button>' +
 	      '<button type="button" class="btn btn-xs btn-danger delete">Delete</button>' +
 	      '</div> ' +
-	      '<span class="text"></span>',
+	      '<span class="text"></span> ' +
+	      '<span class="wf"></span>',
 
 	className: "task",
 
@@ -406,6 +406,7 @@ var TaskView = Backbone.View.extend({
 		this.$el.html(this.html);
 		this.$timeScaleSelect = this.$("select");
 		this.$text = this.$("span.text");
+		this.$wf = this.$("span.wf");
 
 		this.$timeScaleSelect.append("<option />");
 		_.each(Task.timeScales, function (scale) {
@@ -421,6 +422,7 @@ var TaskView = Backbone.View.extend({
 
 		this.timeScaleUpdated();
 		this.textUpdated();
+		this.wfUpdated();
 	},
 
 	timeScaleUpdated: function () {
@@ -435,6 +437,14 @@ var TaskView = Backbone.View.extend({
 
 	textUpdated: function () {
 		this.$text.text(this.task.get("text")).linkify();
+	},
+
+	wfUpdated: function () {
+		if (this.task.has("waitingFor")) {
+			this.$wf.show().text(this.task.get("waitingFor")).linkify();
+		} else {
+			this.$wf.hide().empty();
+		}
 	},
 
 	timeScaleChanged: function () {
