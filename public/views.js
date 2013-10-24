@@ -1,12 +1,12 @@
 var PileView = Backbone.View.extend({
 	html: '<div class="navigation" />' +
 	      '<div class="well selection" />' +
-	      // '<h3>Any of these could be your next action:</h3>' +
-	      // '<div class="nexts"></ul>' +
 	      '<h3 class="tasks">Here are your tasks in approximate order: <button type="button" class="btn btn-xs btn-default reprioritize-top">Reprioritize Due Tasks</button></h3>' +
-	      '<div class="rest task-list"></div>' +
+	      '  <div class="rest task-list"></div>' +
+	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
+	      '  <div class="wf task-list"></div>' +
 	      '<h3 class="add">Add tasks:</h3>' +
-	      '<div class="new-task"></div>',
+	      '  <div class="new-task"></div>',
 
 	events: {
 		"click .reprioritize-top" : "reprioritizeTopClicked",
@@ -18,10 +18,11 @@ var PileView = Backbone.View.extend({
 		this.$el.html(this.html);
 		this.$selection = this.$(".selection");
 		this.$newTask = this.$(".new-task");
-		// this.$nexts = this.$(".nexts");
 		this.$reprioritizeTop = this.$(".reprioritize-top");
+		this.$restHeader = this.$("h3.tasks");
 		this.$rest = this.$(".rest");
-		this.$tasksHeader = this.$("h3.tasks");
+		this.$wfHeader = this.$("h3.wf-tasks");
+		this.$wf = this.$(".wf");
 		this.$addHeader = this.$("h3.add");
 
 		this.navBarView = new NavBarView({ el: this.$(".navigation"), model: this.pile });
@@ -31,21 +32,35 @@ var PileView = Backbone.View.extend({
 		this.listenTo(this.selectionView, "compared", this.tasksCompared);
 		this.listenTo(this.selectionView, "shuffle", this.render);
 
-		this.taskListView = new TaskListView({ el: this.$rest, model: this.pile });
+		this.taskListView = new TaskListView({
+			el: this.$rest,
+			model: this.pile,
+			taskFilter: function (t) { return !t.has("waitingFor") },
+		});
 		this.taskListView.render();
+
+		this.wfTaskListView = new TaskListView({
+			el: this.$wf,
+			model: this.pile,
+			taskFilter: function (t) { return t.has("waitingFor") },
+		});
+		this.wfTaskListView.render();
 
 		this.newTasksView = new NewTasksView({ el: this.$newTask });
 		this.newTasksView.on("add-many", this.addNewTasks, this);
 		this.newTasksView.render();
 
 		this.listenTo(this.pile.tasks, "add remove reset", this.render);
+		this.listenTo(this.pile.tasks, "change:waitingFor", this.render);
 		this.listenTo(this.pile.comparisons, "add remove reset change", this.render);
 	},
 
 	render: function () {
-		if (this.pile.taskForest.potentialNextTasks.length > 1) {
-			var pair = _.sortBy(this.pile.taskForest.potentialNextTasks, Math.random).slice(0, 2);
-			var progress = 1 - ((this.pile.taskForest.potentialNextTasks.length - 1) / this.pile.tasks.length);
+		var nexts = this.pile.taskForest.potentialNextTasks();
+		if (nexts.length > 1) {
+			var pair = _.sortBy(nexts, Math.random).slice(0, 2);
+			var activeTasks = this.pile.tasks.filter(function (t) { return !t.has("waitingFor") });
+			var progress = 1 - ((nexts.length - 1) / activeTasks.length);
 			this.selectionView.prepare(pair[0], pair[1], progress);
 			this.selectionView.render();
 			this.$selection.show();
@@ -58,8 +73,10 @@ var PileView = Backbone.View.extend({
 		}
 
 		this.taskListView.render();
+		this.wfTaskListView.render();
 
-		this.$tasksHeader.toggle(this.pile.tasks.length > 0);
+		this.$restHeader.toggle(this.taskListView.taskCount() > 0);
+		this.$wfHeader.toggle(this.wfTaskListView.taskCount() > 0);
 		this.$addHeader.text(this.pile.tasks.length > 0 ? "Add more tasks:" : "Add tasks:");
 
 		return this;
@@ -288,25 +305,37 @@ var SelectionView = Backbone.View.extend({
 var TaskListView = Backbone.View.extend({
 	html: '',
 
+	constructor: function (options) {
+		this.taskFilter = (options || {}).taskFilter || function () { return true };
+		Backbone.View.apply(this, arguments);
+	},
+
 	initialize: function () {
 		this.pile = this.model;
 		this.tasks = this.pile.tasks;
 		this.listenTo(this.tasks, "add", this.taskAdded);
 		this.listenTo(this.tasks, "remove", this.taskRemoved);
-		this.listenTo(this.tasks, "reset", this.tasksReset);
-		this.listenTo(this.tasks, "sort", this.tasksSorted);
+		this.listenTo(this.tasks, "reset", this._syncViews);
+		this.listenTo(this.tasks, "sort", this._syncViews);
+		this.listenTo(this.tasks, "change:waitingFor", this._syncViews); // TODO: this one could be done more efficiently
 
 		this.taskViews = [];
 
-		this.tasksReset();
+		this._syncViews();
 	},
 
 	render: function () {
-		this.$el.toggleClass("highlight-next-action", this.highlightNextAction);
+		this.$el.toggleClass("highlight-next-action", !!this.highlightNextAction);
+	},
+
+	taskCount: function () {
+		return this.taskViews.length;
 	},
 
 	taskAdded: function () {
 		var task = arguments[0];
+		if (!this.taskFilter(task)) return;
+
 		var options = arguments[2];
 		var view = new TaskView({ model: task });
 		this.taskViews.push(view);
@@ -316,42 +345,27 @@ var TaskListView = Backbone.View.extend({
 	taskRemoved: function () {
 		var task = arguments[0];
 		var options = arguments[2];
-		var view = this.taskViews[options.index];
 
-		if (view && view.task.cid === task.cid) {
-			view.$el.detach();
-			this.taskViews.splice(options.index, 1);
-		} else {
-			console.log("views out of sync! rendering task list view from scratch");
-			this.tasksReset();
-		}
+		this.taskViews = _.reduce(this.taskViews, function (views, view) {
+			if (view.task.cid === task.cid) {
+				view.$el.detach();
+			} else {
+				views.push(view);
+			}
+			return views;
+		}, []);
 	},
 
-	tasksReset: function () {
-		// TODO: reuse views, discard unneeded views
-
-		this.$el.html(this.html);
-
-		this.taskViews = this.tasks.map(function (task) {
-			return new TaskView({ model: task });
-		});
-
-		_.each(this.taskViews, function (view) {
-			this.$el.append(view.render().el);
-		}, this);
-	},
-
-	tasksSorted: function () {
+	_syncViews: function () {
 		var viewsByCid = _.indexBy(this.taskViews, function (view) {
 			view.$el.detach();
 			return view.task.cid;
 		});
 
-		this.taskViews = this.tasks.map(function (task) {
+		this.taskViews = this.tasks.filter(this.taskFilter).map(function (task) {
 			if (viewsByCid[task.cid]) {
 				return viewsByCid[task.cid];
 			} else {
-				console.error("making new view during sort");
 				return new TaskView({ model: task });
 			}
 		});
@@ -367,9 +381,11 @@ var TaskView = Backbone.View.extend({
 	      '<select></select>' +
 	      '<button type="button" class="btn btn-xs btn-default edit">Edit</button>' +
 	      '<button type="button" class="btn btn-xs btn-default reprioritize">Reprioritize</button>' +
+	      '<button type="button" class="btn btn-xs btn-warning put-off">Put Off</button>' +
+	      '<button type="button" class="btn btn-xs btn-success ready">Ready!</button>' +
 	      // '<button type="button" class="btn btn-xs btn-success done">Done!</button>' +
 	      '<button type="button" class="btn btn-xs btn-danger delete">Delete</button>' +
-	      '</div>' +
+	      '</div> ' +
 	      '<span class="text"></span>',
 
 	className: "task",
@@ -377,6 +393,8 @@ var TaskView = Backbone.View.extend({
 	events: {
 		"click button.edit" : "editClicked",
 		"click button.reprioritize" : "reprioritizeClicked",
+		"click button.put-off" : "putOffClicked",
+		"click button.ready" : "readyClicked",
 		"click button.done" : "doneClicked",
 		"click button.delete" : "deleteClicked",
 		"change select" : "timeScaleChanged",
@@ -438,6 +456,18 @@ var TaskView = Backbone.View.extend({
 		_.each(comparisons, function (comparison) {
 			comparison.invalidate();
 		});
+	},
+
+	putOffClicked: function () {
+		var wf = prompt("What are you waiting for?\n(ex: Tuesday, extra cash, the office)");
+		if (wf !== null) {
+			this.task.save({ waitingFor: wf });
+		}
+	},
+
+	readyClicked: function () {
+		this.task.unset("waitingFor");
+		this.task.save();
 	},
 
 	deleteClicked: function () {

@@ -71,6 +71,7 @@ function TaskForest(tasks, comparisons) {
 	this.listenTo(tasks, "add", this._addTask);
 	this.listenTo(tasks, "add", this._triggerRecalculate);
 	this.listenTo(tasks, "remove reset", this._recalculate);
+	this.listenTo(tasks, "change:waitingFor", this._recalculate); // TODO: this could be more efficient
 
 	this.listenTo(comparisons, "add", this._addComparison);
 	this.listenTo(comparisons, "add", this._triggerRecalculate);
@@ -78,8 +79,8 @@ function TaskForest(tasks, comparisons) {
 }
 _.extend(TaskForest.prototype, Backbone.Events, {
 	taskComparator: function (task1, task2) {
-		var level1 = this._levels[task1.cid];
-		var level2 = this._levels[task2.cid];
+		var level1 = this._level(task1.cid);
+		var level2 = this._level(task2.cid);
 
 		if (level1 === undefined && level2 === undefined) {
 			return 0;
@@ -91,12 +92,21 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		return level1 - level2;
 	},
 
-	subtreeList: function (task) {
-		var list = [];
-		this._walk(task, function (child) { list.push(child) });
-		list.shift(); // remove the task itself
-		list.sort(this.taskComparator);
-		return list;
+	potentialNextTasks: function () {
+		var nexts = [];
+
+		this._walk(null, function (task, level) {
+			if (task.has("waitingFor")) {
+				return level;
+			} else {
+				if (level === 0) {
+					nexts.push(task);
+				}
+				return level + 1;
+			}
+		}, 0);
+
+		return nexts;
 	},
 
 	_triggerRecalculate: function () {
@@ -108,12 +118,9 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this._parents[task.cid] = [];
 		this._roots.push(task.cid);
 		this._levels[task.cid] = 0;
-		this.potentialNextTasks.push(task);
 	},
 
 	_addComparison: function (comparison) {
-		// TODO: ignore edges that create cycles
-
 		if (comparison.get("invalidated")) {
 			return;
 		}
@@ -124,40 +131,79 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 			return;
 		}
 
-		this._addChild(greaterTask.cid, lesserTask.cid);
-		removeFromSet(this._roots, lesserTask.cid);
+		if (_.contains(this._allParents(greaterTask.cid), lesserTask.cid)) {
+			console.log("ignoring comparison that would create a cycle");
+			return;
+		}
 
-		this._walk(lesserTask, _.bind(function (task, level) {
-			this._levels[task.cid] = level;
-			return level + 1;
-		}, this), this._levels[greaterTask.cid] + 1); // TODO: choose the max of its current level and this new level
+		var oldLevelForLesserTask = this._levels[lesserTask.cid];
+		var newLevelForLesserTask = this._levels[greaterTask.cid] + 1;
+		if (newLevelForLesserTask > oldLevelForLesserTask) {
+			this._moveChild(lesserTask.cid, greaterTask.cid);
+			removeFromSet(this._roots, lesserTask.cid);
 
-		this.potentialNextTasks = _.filter(this.potentialNextTasks, function (task) {
-			return task.cid !== lesserTask.cid;
-		}, this);
+			this._walk(lesserTask, _.bind(function (child, level) {
+				this._levels[child.cid] = level;
+				return level + 1;
+			}, this), newLevelForLesserTask)
+		}
 	},
 
 	_recalculate: function () {
-		this._children = {}; // id -> [id, ...]
-		this._parents = {}; // id -> [id, ...]
-		this._roots = []; // to be filled in at the end
-		this._levels = {}; // id -> level (0-indexed)
-		this.potentialNextTasks = []; // [task, ...]
+		this._children = {}; // cid -> [cid, ...]
+		this._parents = {}; // cid -> [cid, ...]
+		this._roots = []; // [cid, ...]
+		this._levels = {}; // cid -> int
 
 		this.tasks.each(this._addTask, this);
 		this.comparisons.each(this._addComparison, this);
 
 		this.trigger("recalculate");
+	},
 
-		// this._walk(null, _.bind(function (task, indent) {
-		// 	console.log(indent + task.get("text"));
-		// 	return indent + " ";
-		// }, this), "");
+	_moveChild: function (cid, newParentCid) {
+		// remove from all the old parents
+		_.each(this._parents[cid], function (parentCid) {
+			removeFromSet(this._children[parentCid], cid);
+		}, this);
+
+		// clear the parents array
+		this._parents[cid] = [];
+
+		// add to new parent
+		this._addChild(newParentCid, cid);
 	},
 
 	_addChild: function (parentCid, childCid) {
 		addToSet(this._children[parentCid], childCid);
 		addToSet(this._parents[childCid], parentCid);
+	},
+
+	_allParents: function (cid) {
+		var self = this, all = [];
+		walk(cid);
+		return all;
+
+		function walk(currentCid) {
+			var parentCids = self._parents[currentCid] || [];
+			all.push.apply(all, parentCids);
+			_.each(parentCids, walk);
+		}
+	},
+
+	// find the longest path to the root & return that depth
+	_level: function (cid) {
+		var self = this;
+		return getLevel(cid);
+
+		function getLevel(currentCid) {
+			var parentCids = self._parents[currentCid] || [];
+			if (parentCids.length === 0) {
+				return 0;
+			}
+
+			return _.max(parentCids.map(getLevel)) + 1;
+		}
 	},
 
 	_walk: function (task, iter, data, filter) {
