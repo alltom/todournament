@@ -546,7 +546,6 @@ var NewTasksView = Backbone.View.extend({
 		this.$excludeCheckbox = this.$(".exclude input");
 		this.$excludeCount = this.$(".exclude .count");
 
-		this.$timeScaleSelect.append("<option>whenever</option>");
 		_.each(Task.timeScales, function (scale) {
 			var $option = $("<option />", {
 				value: scale.id,
@@ -554,6 +553,7 @@ var NewTasksView = Backbone.View.extend({
 			});
 			this.$timeScaleSelect.append($option);
 		}, this);
+		this.$timeScaleSelect.append("<option selected>whenever</option>");
 	},
 
 	textChanged: function () {
