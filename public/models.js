@@ -76,6 +76,8 @@ function TaskForest(tasks, comparisons) {
 	this.listenTo(comparisons, "add", this._addComparison);
 	this.listenTo(comparisons, "add", this._triggerRecalculate);
 	this.listenTo(comparisons, "remove reset sort change:invalidated", this._recalculate);
+
+	// this.listenTo(this, "recalculate", this._debug);
 }
 _.extend(TaskForest.prototype, Backbone.Events, {
 	taskComparator: function (task1, task2) {
@@ -149,6 +151,15 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this.comparisons.each(this._addComparison, this);
 
 		this.trigger("recalculate");
+	},
+
+	_debug: function () {
+		console.group();
+		this._walk(null, _.bind(function (task, indent) {
+			console.log(indent + task.get("text") + (task.has("waitingFor") ? " wf" : ""));
+			return indent + "  ";
+		}, this), "");
+		console.groupEnd();
 	},
 
 	_moveChild: function (cid, newParentCid) {
