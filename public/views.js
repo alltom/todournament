@@ -161,13 +161,15 @@ var NavBarView = Backbone.View.extend({
 	      // '        <li><a href="#">Export</a></li>' +
 	      // '      </ul>' +
 	      // '    </li>' +
-	      '    <li><button type="button" class="btn btn-default navbar-btn export">Import/Export</button></li>' +
+	      '    <li><button type="button" class="btn btn-default navbar-btn export">Import/Export&#8230;</button></li>' +
+	      '    <li><button type="button" class="btn btn-default navbar-btn purge">Purge&#8230;</button></li>' +
 	      '  </ul>' +
 	      '</div>' +
 	      '</nav>',
 
 	events: {
 		"click .export" : "importExportClicked",
+		"click .purge" : "purgeClicked",
 	},
 
 	initialize: function () {
@@ -178,6 +180,17 @@ var NavBarView = Backbone.View.extend({
 	importExportClicked: function () {
 		var view = new ImportExportView({ model: this.pile });
 		view.$el.modal();
+	},
+
+	purgeClicked: function () {
+		if (confirm("Purge deleted tasks and comparisons? Do this if things get slow. You can use the \"Import/Export\" button to make a backup in case you ever want them back.")) {
+			var toDestroy = this.pile.comparisons.filter(function (comparison) {
+				var greaterTask = this.pile.tasks.get(comparison.get("greaterTaskId"));
+				var lesserTask = this.pile.tasks.get(comparison.get("lesserTaskId"));
+				return !greaterTask || !lesserTask;
+			}, this);
+			_.invoke(toDestroy, "destroy");
+		}
 	},
 });
 
@@ -197,7 +210,7 @@ var ImportExportView = Backbone.View.extend({
 	      '      </form>' +
 	      '    </div>' +
 	      '    <div class="modal-footer">' +
-	      '      <button type="button" class="btn btn-default import-copy">Import as a Copy</button>' +
+	      '      <button type="button" class="btn btn-default import-copy">Import as a Copy&#8230;</button>' +
 	      '      <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>' +
 	      '    </div>' +
 	      '  </div><!-- /.modal-content -->' +
@@ -217,14 +230,16 @@ var ImportExportView = Backbone.View.extend({
 	},
 
 	importCopyClicked: function () {
-		var piles = this.pile.collection;
-		var pileJSON = JSON.parse(this.$("textarea").val());
-		piles.clonePileFromJSON(pileJSON).then(_.bind(function (pile) {
-			this.$el.modal("hide");
-			goToPile(pile);
-		}, this), function (reason) {
-			console.log("failed to clone pile", reason); // TODO: tell the user
-		});
+		if (confirm("This will create a new to-do list with the encoded data above. You will still be able to access the current data at the current URL. Continue?")) {
+			var piles = this.pile.collection;
+			var pileJSON = JSON.parse(this.$("textarea").val());
+			piles.clonePileFromJSON(pileJSON).then(_.bind(function (pile) {
+				this.$el.modal("hide");
+				goToPile(pile);
+			}, this), function (reason) {
+				console.log("failed to clone pile", reason); // TODO: tell the user
+			});
+		}
 	},
 });
 
