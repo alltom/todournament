@@ -6,7 +6,8 @@ var PileView = Backbone.View.extend({
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
 	      '  <div class="wf task-list"></div>' +
 	      '<h3 class="add">Add tasks:</h3>' +
-	      '  <div class="new-task"></div>',
+	      '  <div class="new-task"></div>' +
+	      '<div class="footer">Created by <a href="http://alltom.com/">Tom Lieber</a></div>',
 
 	events: {
 		"click .reprioritize-top" : "reprioritizeTopClicked",
