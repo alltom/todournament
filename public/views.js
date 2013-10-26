@@ -119,7 +119,7 @@ var PileView = Backbone.View.extend({
 				}
 			}
 
-			return age / range;
+			return age / (range / 2); // divided by 2 so you'll see a task twice in the period, or so
 		}
 	},
 });
