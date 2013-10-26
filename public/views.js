@@ -1,7 +1,7 @@
 var PileView = Backbone.View.extend({
 	html: '<div class="navigation" />' +
 	      '<div class="well selection" />' +
-	      '<h3 class="tasks">Here are your tasks in approximate order: <button type="button" class="btn btn-xs btn-default reprioritize-top">Reprioritize Due Tasks</button></h3>' +
+	      '<h3 class="tasks">Here are your tasks in approximate order: <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically. Resets the win/loss record for the 10 tasks closest to becoming overdue.">Reprioritize Due Tasks</button></h3>' +
 	      '  <div class="rest task-list"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
 	      '  <div class="wf task-list"></div>' +
@@ -24,6 +24,8 @@ var PileView = Backbone.View.extend({
 		this.$wfHeader = this.$("h3.wf-tasks");
 		this.$wf = this.$(".wf");
 		this.$addHeader = this.$("h3.add");
+
+		this.$reprioritizeTop.tooltip({ placement: "right" });
 
 		this.navBarView = new NavBarView({ el: this.$(".navigation"), model: this.pile });
 
@@ -220,7 +222,7 @@ var SelectionView = Backbone.View.extend({
 	html: '<div class="question text-center">Which is it more important to do first?</div>' +
 	      '<div class="row text-center button-row">' +
 	      '  <div class="left col-md-5"><button type="button" class="btn btn-success">This One!</button></div>' +
-	      '  <div class="col-md-2"><button type="button" class="btn btn-xs btn-default shuffle">I can\'t decide!</button></div>' +
+	      '  <div class="col-md-2"><button type="button" class="btn btn-xs btn-default shuffle" data-toggle="tooltip" title="Choose another 2 tasks to compare instead.">I can\'t decide!</button></div>' +
 	      '  <div class="right col-md-5"><button type="button" class="btn btn-success">This One!</button></div>' +
 	      '</div>' +
 	      '<div class="row task-row">' +
@@ -245,6 +247,8 @@ var SelectionView = Backbone.View.extend({
 		this.$el.html(this.html);
 		this.$left = this.$(".task-row .left");
 		this.$right = this.$(".task-row .right");
+
+		this.$("button.shuffle").tooltip({ placement: "bottom" });
 	},
 
 	render: function () {
