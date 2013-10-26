@@ -13,7 +13,7 @@ var PileView = Backbone.View.extend({
 	      '</div>' +
 	      '<h3 class="add">Add tasks:</h3>' +
 	      '  <div class="new-task"></div>' +
-	      '<div class="footer">Created by <a href="http://alltom.com/">Tom Lieber</a>. Submit patches and bug reports on <a href="https://github.com/alltom/humansort">GitHub</a>.</div>',
+	      '<div class="footer">Created by <a href="http://alltom.com/">Tom Lieber</a>. Submit patches and bug reports on <a href="https://github.com/alltom/todournament">GitHub</a>.</div>',
 
 	events: {
 		"click .reprioritize-top" : "reprioritizeTopClicked",
