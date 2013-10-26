@@ -5,6 +5,12 @@ var PileView = Backbone.View.extend({
 	      '  <div class="rest task-list"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
 	      '  <div class="wf task-list"></div>' +
+	      '<div class="jumbotron introduction">' +
+	      '<div class="container">' +
+	      '  <h2>What is Todournament?</h2>' +
+	      '  <p>Todournament is a to-do list that <strong>helps you prioritize</strong>. It\'s designed to <strong>minimize bookkeeping</strong> while keeping your list ordered. Add to-do items below to begin.</p>' +
+	      '</div>' +
+	      '</div>' +
 	      '<h3 class="add">Add tasks:</h3>' +
 	      '  <div class="new-task"></div>' +
 	      '<div class="footer">Created by <a href="http://alltom.com/">Tom Lieber</a></div>',
@@ -81,6 +87,8 @@ var PileView = Backbone.View.extend({
 		this.$restHeader.toggle(this.taskListView.taskCount() > 0);
 		this.$wfHeader.toggle(this.wfTaskListView.taskCount() > 0);
 		this.$addHeader.text(this.pile.tasks.length > 0 ? "Add more tasks:" : "Add tasks:");
+
+		this.$el.toggleClass("non-empty", this.pile.tasks.length > 0);
 
 		return this;
 	},
@@ -495,7 +503,7 @@ var NewTasksView = Backbone.View.extend({
 	      '<label class="sr-only" for="new-task-textarea">Several to-do items, one per line</label>' +
 	      '<textarea class="form-control" rows="4" cols="60" id="new-task-textarea" placeholder="Several tasks, one per line"></textarea>' +
 	      '<button type="submit" class="btn btn-default add-several">Add Tasks</button> ' +
-	      'To be done <select class="timescale form-control" style="width: 12em"></select>' +
+	      '<span class="oneline">To be done <select class="timescale form-control" style="width: 12em"></select></span>' +
 	      '</form>',
 
 	className: "new-task",

@@ -2,12 +2,20 @@ body {
 	padding-bottom: 200px;
 }
 
+.oneline {
+	white-space: nowrap;
+}
+
 #error {
 	display: none;
 }
 
 .navbar-brand span {
 	color: black;
+}
+
+.non-empty .introduction {
+	display: none;
 }
 
 .selection {
