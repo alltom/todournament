@@ -52,6 +52,7 @@ var PileView = Backbone.View.extend({
 			el: this.$wf,
 			model: this.pile,
 			taskFilter: function (t) { return t.has("waitingFor") },
+			comparator: function (t) { return t.id },
 		});
 		this.wfTaskListView.render();
 
@@ -316,10 +317,9 @@ var SelectionView = Backbone.View.extend({
 });
 
 var TaskListView = Backbone.View.extend({
-	html: '',
-
 	constructor: function (options) {
 		this.taskFilter = (options || {}).taskFilter || function () { return true };
+		if (options.comparator) this.comparator = options.comparator;
 		Backbone.View.apply(this, arguments);
 	},
 
@@ -375,7 +375,12 @@ var TaskListView = Backbone.View.extend({
 			return view.task.cid;
 		});
 
-		this.taskViews = this.tasks.filter(this.taskFilter).map(function (task) {
+		var tasks = this.tasks.filter(this.taskFilter);
+		if (this.comparator) {
+			tasks = _.sortBy(tasks, this.comparator);
+		}
+
+		this.taskViews = tasks.map(function (task) {
 			if (viewsByCid[task.cid]) {
 				return viewsByCid[task.cid];
 			} else {
