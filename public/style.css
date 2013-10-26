@@ -80,3 +80,13 @@ body {
 .new-task textarea {
 	margin-bottom: 10px;
 }
+
+.new-task button {
+	margin-right: 10px;
+}
+
+div.footer {
+	font-size: 10pt;
+	text-align: center;
+	margin-top: 3em;
+}

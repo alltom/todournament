@@ -494,7 +494,7 @@ var NewTasksView = Backbone.View.extend({
 	      '<label class="sr-only" for="new-task-textarea">Several to-do items, one per line</label>' +
 	      '<textarea class="form-control" rows="4" cols="60" id="new-task-textarea" placeholder="Several tasks, one per line"></textarea>' +
 	      '<button type="submit" class="btn btn-default add-several">Add Tasks</button> ' +
-	      '<select class="timescale form-control" style="width: 12em"></select>' +
+	      'To be done <select class="timescale form-control" style="width: 12em"></select>' +
 	      '</form>',
 
 	className: "new-task",
@@ -510,7 +510,7 @@ var NewTasksView = Backbone.View.extend({
 		this.$addButton = this.$("button.add-several");
 		this.$timeScaleSelect = this.$("select.timescale");
 
-		this.$timeScaleSelect.append("<option />");
+		this.$timeScaleSelect.append("<option>whenever</option>");
 		_.each(Task.timeScales, function (scale) {
 			var $option = $("<option />", {
 				value: scale.id,
