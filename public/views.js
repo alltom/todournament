@@ -56,7 +56,7 @@ var PileView = Backbone.View.extend({
 		});
 		this.wfTaskListView.render();
 
-		this.newTasksView = new NewTasksView({ el: this.$newTask });
+		this.newTasksView = new NewTasksView({ el: this.$newTask, model: this.pile });
 		this.newTasksView.on("add-many", this.addNewTasks, this);
 		this.newTasksView.render();
 
@@ -508,7 +508,8 @@ var NewTasksView = Backbone.View.extend({
 	      '<label class="sr-only" for="new-task-textarea">Several to-do items, one per line</label>' +
 	      '<textarea class="form-control" rows="4" cols="60" id="new-task-textarea" placeholder="Several tasks, one per line"></textarea>' +
 	      '<button type="submit" class="btn btn-default add-several">Add Tasks</button> ' +
-	      '<span class="oneline">To be done <select class="timescale form-control" style="width: 12em"></select></span>' +
+	      '<span class="when oneline">To be done <select class="timescale form-control" style="width: 12em"></select></span>' +
+	      '<span class="exclude checkbox"><label><input type="checkbox" checked /> Exclude <span class="count"></span></label></span>' +
 	      '</form>',
 
 	className: "new-task",
@@ -517,12 +518,18 @@ var NewTasksView = Backbone.View.extend({
 		"click button.add-several" : "addSeveralTasks",
 		"input textarea#new-task-textarea" : "textChanged",
 		"propertychange textarea#new-task-textarea" : "textChanged",
+		"change .exclude input" : "textChanged",
 	},
 
 	initialize: function () {
+		this.pile = this.model;
+
 		this.$el.html(this.html);
 		this.$addButton = this.$("button.add-several");
 		this.$timeScaleSelect = this.$("select.timescale");
+		this.$exclude = this.$(".exclude").hide();
+		this.$excludeCheckbox = this.$(".exclude input");
+		this.$excludeCount = this.$(".exclude .count");
 
 		this.$timeScaleSelect.append("<option>whenever</option>");
 		_.each(Task.timeScales, function (scale) {
@@ -534,17 +541,27 @@ var NewTasksView = Backbone.View.extend({
 		}, this);
 	},
 
-	render: function () {
-	},
-
 	textChanged: function () {
 		var texts = this._texts();
-		this.$addButton.text("Add " + texts.length + " Task" + (texts.length === 1 ? "" : "s"));
+		var numDupes = _.filter(texts, this._isDuplicate, this).length;
+		var numToAdd = this.$excludeCheckbox.prop("checked") ? texts.length - numDupes : texts.length;
+
+		this.$addButton.text("Add " + numToAdd + " Task" + (numToAdd === 1 ? "" : "s"));
+
+		this.$exclude.toggle(numDupes > 0);
+		if (numDupes > 0) {
+			this.$excludeCount.text(numDupes + " duplicate task" + (numDupes === 1 ? "" : "s"));
+		}
 	},
 
 	addSeveralTasks: function (e) {
 		e.preventDefault();
+
 		var texts = this._texts();
+		if (this.$excludeCheckbox.prop("checked")) {
+			texts = _.filter(texts, this._isNotDuplicate, this);
+		}
+
 		this.trigger("add-many", texts, this.$timeScaleSelect.val());
 		this.$timeScaleSelect.val("");
 		this.$("#new-task-textarea").val("").focus();
@@ -560,5 +577,13 @@ var NewTasksView = Backbone.View.extend({
 			}
 		}, this);
 		return texts;
+	},
+
+	_isDuplicate: function (text) {
+		return !!this.pile.tasks.findWhere({ text: text });
+	},
+
+	_isNotDuplicate: function (text) {
+		return !this._isDuplicate(text);
 	},
 });

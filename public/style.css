@@ -2,10 +2,6 @@ body {
 	padding-bottom: 200px;
 }
 
-.oneline {
-	white-space: nowrap;
-}
-
 #error {
 	display: none;
 }
@@ -91,6 +87,12 @@ body {
 
 .new-task button {
 	margin-right: 10px;
+}
+
+.new-task .when,
+.new-task .exclude {
+	white-space: nowrap;
+	margin-right: 20px;
 }
 
 div.footer {
