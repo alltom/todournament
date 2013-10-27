@@ -1,8 +1,8 @@
 var PileView = Backbone.View.extend({
 	html: '<div class="navigation" />' +
-	      '<div class="well selection" />' +
-	      '<h3 class="next-task">Here is what you should do now (delete it when done):</h3>' +
-	      '  <div class="task-list next"><div class="next-task task"></div></div>' +
+	      '<div class="well selection glow" />' +
+	      '<h3 class="next-task">Here is what you should do now:</h3>' +
+	      '  <div class="task-list next"><div class="next-task task glow"></div></div>' +
 	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically. Resets the win/loss record for the 10 tasks closest to becoming overdue.">Reprioritize Due Tasks</button></h3>' +
 	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
