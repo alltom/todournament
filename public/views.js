@@ -165,6 +165,7 @@ var NavBarView = Backbone.View.extend({
 	      '    <li><button type="button" class="btn btn-default navbar-btn export">Import/Export&#8230;</button></li>' +
 	      '    <li><button type="button" class="btn btn-default navbar-btn purge">Purge&#8230;</button></li>' +
 	      '  </ul>' +
+	      '  <p class="navbar-text description"><span class="count"></span>, saved in <abbr title="So don\'t clear your cookies! Dropbox support coming soon.">Local Storage</abbr></p>' +
 	      '</div>' +
 	      '</nav>',
 
@@ -176,6 +177,14 @@ var NavBarView = Backbone.View.extend({
 	initialize: function () {
 		this.pile = this.model;
 		this.$el.html(this.html);
+
+		this.$taskCount = this.$(".description .count");
+		this.listenTo(this.pile.tasks, "add remove reset", this.taskCountChanged);
+		this.taskCountChanged();
+	},
+
+	taskCountChanged: function () {
+		this.$taskCount.text(this.pile.tasks.length + " task" + (this.pile.tasks.length === 1 ? "" : "s"));
 	},
 
 	importExportClicked: function () {
