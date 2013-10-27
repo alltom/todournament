@@ -188,7 +188,7 @@ var NavBarView = Backbone.View.extend({
 	      '    <li><button type="button" class="btn btn-default navbar-btn export">Import/Export&#8230;</button></li>' +
 	      '    <li><button type="button" class="btn btn-default navbar-btn purge">Purge&#8230;</button></li>' +
 	      '  </ul>' +
-	      '  <p class="navbar-text description"><span class="count"></span>, saved in <abbr title="So don\'t clear your cookies! Dropbox support coming soon.">Local Storage</abbr></p>' +
+	      '  <p class="navbar-text description"><span class="count"></span>, saved in <abbr data-toggle="tooltip" title="Saved on your computer (not our server), so don\'t clear your cookies! Dropbox support coming soon.">Local Storage</abbr></p>' +
 	      '</div>' +
 	      '</nav>',
 
@@ -204,6 +204,8 @@ var NavBarView = Backbone.View.extend({
 		this.$taskCount = this.$(".description .count");
 		this.listenTo(this.pile.tasks, "add remove reset", this.taskCountChanged);
 		this.taskCountChanged();
+
+		this.$(".description abbr").tooltip({ placement: "bottom" });
 	},
 
 	taskCountChanged: function () {
