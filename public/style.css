@@ -39,7 +39,8 @@ body {
 	margin: .5em 0;
 }
 
-.selection .task .tools .reprioritize {
+.selection .task .tools .reprioritize,
+.wf .task .tools .reprioritize {
 	display: none;
 }
 
