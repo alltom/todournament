@@ -1,10 +1,12 @@
 var PileView = Backbone.View.extend({
 	html: '<div class="navigation" />' +
 	      '<div class="well selection" />' +
-	      '<h3 class="tasks">Here are your tasks in <em>approximate</em> order: <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically. Resets the win/loss record for the 10 tasks closest to becoming overdue.">Reprioritize Due Tasks</button></h3>' +
-	      '  <div class="rest task-list"></div>' +
+	      '<h3 class="next-task">Here is what you should do now (delete it when done):</h3>' +
+	      '  <div class="task-list next"><div class="next-task task"></div></div>' +
+	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically. Resets the win/loss record for the 10 tasks closest to becoming overdue.">Reprioritize Due Tasks</button></h3>' +
+	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
-	      '  <div class="wf task-list"></div>' +
+	      '  <div class="task-list wf"></div>' +
 	      '<div class="jumbotron introduction">' +
 	      '<div class="container">' +
 	      '  <h2>What is Todournament?</h2>' +
@@ -26,10 +28,16 @@ var PileView = Backbone.View.extend({
 		this.$selection = this.$(".selection");
 		this.$newTask = this.$(".new-task");
 		this.$reprioritizeTop = this.$(".reprioritize-top");
+
+		this.$nextHeader = this.$("h3.next-task");
+		this.$next = this.$(".next");
+		this.$nextTask = this.$("div.next-task");
 		this.$restHeader = this.$("h3.tasks");
+		this.$restHeaderCaption = this.$("h3.tasks span");
 		this.$rest = this.$(".rest");
 		this.$wfHeader = this.$("h3.wf-tasks");
 		this.$wf = this.$(".wf");
+
 		this.$addHeader = this.$("h3.add");
 
 		this.$reprioritizeTop.tooltip({ placement: "right" });
@@ -44,7 +52,7 @@ var PileView = Backbone.View.extend({
 		this.taskListView = new TaskListView({
 			el: this.$rest,
 			model: this.pile,
-			taskFilter: function (t) { return !t.has("waitingFor") },
+			taskFilter: _.bind(function (t) { return !t.has("waitingFor") && !this.isNextTask(t) }, this),
 		});
 		this.taskListView.render();
 
@@ -75,11 +83,21 @@ var PileView = Backbone.View.extend({
 			this.selectionView.render();
 			this.$selection.show();
 
-			this.taskListView.highlightNextAction = false;
+			this.$nextHeader.hide();
+			this.$next.hide();
+
+			this.$restHeaderCaption.text("Here are your tasks in very rough order:");
 		} else {
 			this.$selection.hide();
 
-			this.taskListView.highlightNextAction = true;
+			var taskView = new TaskView({
+				el: this.$nextTask[0],
+				model: nexts[0],
+			});
+			taskView.render();
+			this.$nextHeader.show();
+			this.$next.show();
+			this.$restHeaderCaption.text("Here are the rest of your tasks in very rough order:");
 		}
 
 		this.taskListView.render();
@@ -134,6 +152,11 @@ var PileView = Backbone.View.extend({
 
 			return age / (range / 2); // divided by 2 so you'll see a task twice in the period, or so
 		}
+	},
+
+	isNextTask: function (task) {
+		var nexts = this.pile.taskForest.potentialNextTasks();
+		return nexts.length === 1 && nexts[0].cid === task.cid;
 	},
 });
 
@@ -360,10 +383,6 @@ var TaskListView = Backbone.View.extend({
 		this.taskViews = [];
 
 		this._syncViews();
-	},
-
-	render: function () {
-		this.$el.toggleClass("highlight-next-action", !!this.highlightNextAction);
 	},
 
 	taskCount: function () {

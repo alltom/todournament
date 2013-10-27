@@ -52,13 +52,14 @@ body {
 	margin: .2em;
 }
 
+.next .task .tools .ready,
 .selection .task .tools .ready,
 .task-list.wf .tools .put-off,
 .task-list.rest .tools .ready {
 	display: none;
 }
 
-.task-list.highlight-next-action .task:first-child {
+.next .task {
 	border: 1px solid #9f9;
 	background: #dfd;
 }
