@@ -101,6 +101,7 @@ var PileView = Backbone.View.extend({
 				timeScaleId: timeScaleId,
 			});
 		}, this);
+		$(document.body).scrollTop(0);
 	},
 
 	tasksCompared: function (greaterTask, lesserTask) {
