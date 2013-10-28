@@ -95,21 +95,21 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 	},
 
 	potentialNextTasks: function () {
-		var nexts = this.tasks.map(function (t) { return t.cid });
+		var nexts = this.tasks.reduce(function (o, t) { o[t.cid] = t; return o }, {});
 
 		this._walk(null, function (task, level) {
 			if (task.has("waitingFor")) {
-				removeFromSet(nexts, task.cid);
+				delete nexts[task.cid];
 				return level;
 			} else {
 				if (level > 0) {
-					removeFromSet(nexts, task.cid);
+					delete nexts[task.cid];
 				}
 				return level + 1;
 			}
 		}, 0);
 
-		return _.map(nexts, function (cid) { return this.tasks.get(cid) }, this);
+		return _.values(nexts);
 	},
 
 	_triggerRecalculate: function () {
