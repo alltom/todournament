@@ -69,7 +69,7 @@ var PileView = Backbone.View.extend({
 
 		this.listenTo(this.pile.tasks, "add remove reset", this.render);
 		this.listenTo(this.pile.tasks, "change:waitingFor", this.render);
-		this.listenTo(this.pile.comparisons, "add remove reset change", this.render);
+		this.listenTo(this.pile.comparisons, "add remove reset change:greaterTaskId change:lesserTaskId change:invalidated", this.render);
 	},
 
 	render: function () {
