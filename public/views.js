@@ -112,12 +112,13 @@ var PileView = Backbone.View.extend({
 	},
 
 	addNewTasks: function (texts, timeScaleId) {
-		_.each(texts, function (text) {
-			var task = this.pile.tasks.create({
+		var tasks = this.pile.tasks.add(_.map(texts, function (text) {
+			return {
 				text: text,
 				timeScaleId: timeScaleId,
-			});
-		}, this);
+			};
+		}));
+		_.invoke(tasks, "save");
 		$(document.body).scrollTop(0);
 	},
 
