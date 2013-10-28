@@ -564,6 +564,7 @@ var NewTasksView = Backbone.View.extend({
 
 	addSeveralTasks: function (e) {
 		e.preventDefault();
+		$(e.currentTarget).blur();
 
 		var texts = this._texts();
 		if (this.$excludeCheckbox.prop("checked")) {
