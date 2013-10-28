@@ -376,67 +376,40 @@ var TaskListView = Backbone.View.extend({
 	initialize: function () {
 		this.pile = this.model;
 		this.tasks = this.pile.tasks;
-		this.listenTo(this.tasks, "add", this.taskAdded);
-		this.listenTo(this.tasks, "remove", this.taskRemoved);
-		this.listenTo(this.tasks, "reset", this._syncViews);
-		this.listenTo(this.tasks, "sort", this._syncViews);
-		this.listenTo(this.tasks, "change:waitingFor", this._syncViews); // TODO: this one could be done more efficiently
+		this.taskViews = {};
+
 		this.listenTo(this.pile.taskForest, "recalculate", this._syncViews);
-
-		this.taskViews = [];
-
 		this._syncViews();
 	},
 
 	taskCount: function () {
-		return this.taskViews.length;
-	},
-
-	taskAdded: function () {
-		var task = arguments[0];
-		if (!this.taskFilter(task)) return;
-
-		var options = arguments[2];
-		var view = new TaskView({ model: task });
-		this.taskViews.push(view);
-		this.$el.append(view.render().el);
-	},
-
-	taskRemoved: function () {
-		var task = arguments[0];
-		var options = arguments[2];
-
-		this.taskViews = _.reduce(this.taskViews, function (views, view) {
-			if (view.task.cid === task.cid) {
-				view.$el.detach();
-			} else {
-				views.push(view);
-			}
-			return views;
-		}, []);
+		return _.keys(this.taskViews).length;
 	},
 
 	_syncViews: function () {
-		var viewsByCid = _.indexBy(this.taskViews, function (view) {
-			view.$el.detach();
-			return view.task.cid;
-		});
-
 		var tasks = this.tasks.filter(this.taskFilter);
+		var tasksByCid = _.indexBy(tasks, "cid");
 		if (this.comparator) {
 			tasks = _.sortBy(tasks, this.comparator);
 		}
 
-		this.taskViews = tasks.map(function (task) {
-			if (viewsByCid[task.cid]) {
-				return viewsByCid[task.cid];
-			} else {
-				return new TaskView({ model: task });
-			}
-		});
+		var oldCids = _.keys(this.taskViews);
+		var newCids = _.pluck(tasks, "cid");
+		var removedCids = _.difference(oldCids, newCids);
+		var addedCids = _.difference(newCids, oldCids);
 
-		_.each(this.taskViews, function (view) {
-			this.$el.append(view.render().el);
+		_.each(removedCids, function (cid) {
+			this.taskViews[cid].remove();
+			delete this.taskViews[cid];
+		}, this);
+
+		_.each(addedCids, function (cid) {
+			var task = tasksByCid[cid];
+			this.taskViews[cid] = new TaskView({ model: task }).render();
+		}, this);
+
+		_.each(tasks, function (task) {
+			this.$el.append(this.taskViews[task.cid].el);
 		}, this);
 	},
 });

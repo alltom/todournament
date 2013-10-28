@@ -59,7 +59,6 @@ var ComparisonCollection = Backbone.Collection.extend({
 
 // TaskForest
 
-// TODO: use transitivity when a task is deleted
 function TaskForest(tasks, comparisons) {
 	this.tasks = tasks;
 	this.comparisons = comparisons;
@@ -70,8 +69,7 @@ function TaskForest(tasks, comparisons) {
 
 	this.listenTo(tasks, "add", this._addTask);
 	this.listenTo(tasks, "add", this._triggerRecalculate);
-	this.listenTo(tasks, "remove reset", this._recalculate);
-	this.listenTo(tasks, "change:waitingFor", this._recalculate); // TODO: this could be more efficient
+	this.listenTo(tasks, "remove reset change:waitingFor", this._recalculate);
 
 	this.listenTo(comparisons, "add", this._addComparison);
 	this.listenTo(comparisons, "add", this._triggerRecalculate);
@@ -112,10 +110,6 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		return _.values(nexts);
 	},
 
-	_triggerRecalculate: function () {
-		this.trigger("recalculate");
-	},
-
 	_addTask: function (task) {
 		this._children[task.cid] = [];
 		this._parents[task.cid] = [];
@@ -149,6 +143,12 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 
 		this.tasks.each(this._addTask, this);
 		this.comparisons.each(this._addComparison, this);
+
+		this.trigger("recalculate");
+	},
+
+	_triggerRecalculate: function () {
+		this.trigger("recalculate");
 	},
 
 	_debug: function () {
@@ -158,19 +158,6 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 			return indent + "  ";
 		}, this), "");
 		console.groupEnd();
-	},
-
-	_moveChild: function (cid, newParentCid) {
-		// remove from all the old parents
-		_.each(this._parents[cid], function (parentCid) {
-			removeFromSet(this._children[parentCid], cid);
-		}, this);
-
-		// clear the parents array
-		this._parents[cid] = [];
-
-		// add to new parent
-		this._addChild(newParentCid, cid);
 	},
 
 	_addChild: function (parentCid, childCid) {
