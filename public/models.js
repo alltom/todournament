@@ -60,20 +60,21 @@ var ComparisonCollection = Backbone.Collection.extend({
 // TaskForest
 
 function TaskForest(tasks, comparisons) {
+	this.taskComparator = _.bind(this.taskComparator, this);
+
 	this.tasks = tasks;
 	this.comparisons = comparisons;
 
+	this.potentialNextTasks = new Backbone.Collection();
+	this.nextTasks = new Backbone.Collection();
+	this.restTasks = new Backbone.Collection();
+	this.wfTasks = new Backbone.Collection();
+	this.potentialNextTasks.pile = this.nextTasks.pile = this.restTasks.pile = this.wfTasks.pile = this;
+
 	this._recalculate();
 
-	this.taskComparator = _.bind(this.taskComparator, this);
-
-	this.listenTo(tasks, "add", this._addTask);
-	this.listenTo(tasks, "add", this._triggerRecalculate);
-	this.listenTo(tasks, "remove reset change:waitingFor", this._recalculate);
-
-	this.listenTo(comparisons, "add", this._addComparison);
-	this.listenTo(comparisons, "add", this._triggerRecalculate);
-	this.listenTo(comparisons, "remove reset sort change:invalidated", this._recalculate);
+	this.listenTo(tasks, "add remove reset change:waitingFor", this._recalculate);
+	this.listenTo(comparisons, "add remove reset sort change:invalidated", this._recalculate);
 
 	// this.listenTo(this, "recalculate", this._debug);
 }
@@ -92,22 +93,52 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		return level1 - level2;
 	},
 
-	potentialNextTasks: function () {
-		var nexts = this.tasks.reduce(function (o, t) { o[t.cid] = t; return o }, {});
+	_updateCollections: function () {
+		var potentialNexts, nexts = {}, rests = {}, wfs = {}; // { cid: task, ... }
+		var byLevel = []; // [{ cid: task, ... }, ...]
+		var taskLevel = {}; // { cid: level, ... }
+
+		function setLevel(task, level) {
+			if (!(task.cid in taskLevel) || taskLevel[task.cid] < level) {
+				if ((task.cid in taskLevel) && taskLevel[task.cid] < level) {
+					var oldLevel = taskLevel[task.cid];
+					delete byLevel[oldLevel][task.cid];
+				}
+				taskLevel[task.cid] = level;
+				byLevel[level] || (byLevel[level] = {});
+				byLevel[level][task.cid] = task;
+			}
+		}
 
 		this._walk(null, function (task, level) {
 			if (task.has("waitingFor")) {
-				delete nexts[task.cid];
+				wfs[task.cid] = task;
 				return level;
 			} else {
-				if (level > 0) {
-					delete nexts[task.cid];
-				}
+				setLevel(task, level);
 				return level + 1;
 			}
 		}, 0);
 
-		return _.values(nexts);
+		potentialNexts = byLevel[0] || {};
+
+		for (var level = 0, next = true; byLevel[level]; level++) {
+			var tasks = _.values(byLevel[level]);
+			if (next && tasks.length === 1) {
+				nexts[tasks[0].cid] = tasks[0];
+				next = false; // limit to 1 next task for now
+			} else {
+				next = false;
+				_.each(tasks, function (task) {
+					rests[task.cid] = task;
+				}, this);
+			}
+		}
+
+		this.potentialNextTasks.reset(_.chain(potentialNexts).values().sortBy(this.taskComparator).value());
+		this.nextTasks.reset(_.chain(nexts).values().sortBy(this.taskComparator).value());
+		this.restTasks.reset(_.chain(rests).values().sortBy(this.taskComparator).value());
+		this.wfTasks.reset(_.chain(wfs).values().sortBy(this.taskComparator).value());
 	},
 
 	_addTask: function (task) {
@@ -144,10 +175,8 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this.tasks.each(this._addTask, this);
 		this.comparisons.each(this._addComparison, this);
 
-		this.trigger("recalculate");
-	},
+		this._updateCollections();
 
-	_triggerRecalculate: function () {
 		this.trigger("recalculate");
 	},
 

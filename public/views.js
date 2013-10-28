@@ -1,6 +1,6 @@
 var PileView = Backbone.View.extend({
 	html: '<div class="navigation" />' +
-	      '<div class="well selection glow" />' +
+	      '<div class="well selection" />' +
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
 	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically. Resets the win/loss record for the 10 tasks closest to becoming overdue.">Reprioritize Due Tasks</button></h3>' +
@@ -31,9 +31,11 @@ var PileView = Backbone.View.extend({
 
 		this.$nextHeader = this.$("h3.next-task");
 		this.$next = this.$(".next");
+
 		this.$restHeader = this.$("h3.tasks");
 		this.$restHeaderCaption = this.$("h3.tasks span");
 		this.$rest = this.$(".rest");
+
 		this.$wfHeader = this.$("h3.wf-tasks");
 		this.$wf = this.$(".wf");
 
@@ -48,65 +50,65 @@ var PileView = Backbone.View.extend({
 		this.listenTo(this.selectionView, "compared", this.tasksCompared);
 		this.listenTo(this.selectionView, "shuffle", this.render);
 
+		this.nextTaskListView = new TaskListView({
+			el: this.$next,
+			model: this.pile.taskForest.nextTasks,
+		});
+
 		this.taskListView = new TaskListView({
 			el: this.$rest,
-			model: this.pile,
-			taskFilter: _.bind(function (t) { return !t.has("waitingFor") && !this.isNextTask(t) }, this),
-			comparator: this.pile.taskForest.taskComparator,
+			model: this.pile.taskForest.restTasks,
 		});
-		this.taskListView.render();
 
 		this.wfTaskListView = new TaskListView({
 			el: this.$wf,
-			model: this.pile,
-			taskFilter: function (t) { return t.has("waitingFor") },
-			comparator: function (t) { return t.id },
+			model: this.pile.taskForest.wfTasks,
 		});
-		this.wfTaskListView.render();
 
 		this.newTasksView = new NewTasksView({ el: this.$newTask, model: this.pile });
 		this.newTasksView.on("add-many", this.addNewTasks, this);
 		this.newTasksView.render();
 
-		this.listenTo(this.pile.tasks, "add remove reset", this.render);
-		this.listenTo(this.pile.tasks, "change:waitingFor", this.render);
+		this.listenTo(this.pile.tasks, "add remove reset change:waitingFor", this.render);
 		this.listenTo(this.pile.comparisons, "add remove reset change:greaterTaskId change:lesserTaskId change:invalidated", this.render);
 	},
 
 	render: function () {
-		var nexts = this.pile.taskForest.potentialNextTasks();
-		if (nexts.length > 1) {
-			var pair = _.sortBy(nexts, Math.random).slice(0, 2);
-			var activeTasks = this.pile.tasks.filter(function (t) { return !t.has("waitingFor") });
-			var progress = 1 - ((nexts.length - 1) / activeTasks.length);
+		var forest = this.pile.taskForest;
+
+		if (forest.potentialNextTasks.length > 1) {
+			var pair = forest.potentialNextTasks.shuffle().slice(0, 2);
+			var numActiveTasks = forest.nextTasks.length + forest.restTasks.length;
+			var progress = 1 - ((forest.potentialNextTasks.length - 1) / numActiveTasks);
+
 			this.selectionView.prepare(pair[0], pair[1], progress);
 			this.selectionView.render();
 			this.$selection.show();
-
-			this.$nextHeader.hide();
-			this.$next.hide();
-
-			this.$restHeaderCaption.text("Here are your tasks in very rough order:");
-		} else if (nexts.length === 1) {
-			this.$selection.hide();
-
-			this.$nextHeader.show();
-			this.$next.empty().show().append(
-				new TaskView({ model: nexts[0], className: "task glow" }).render().el);
-			this.$restHeaderCaption.text("Here are the rest of your tasks in very rough order:");
 		} else {
 			this.$selection.hide();
-			this.$nextHeader.hide();
-			this.$next.hide();
 		}
 
-		this.taskListView.render();
-		this.wfTaskListView.render();
+		if (forest.nextTasks.length > 0) {
+			this.$nextHeader.show();
+			this.$restHeaderCaption.text("Here are the rest of your tasks in very rough order:");
+		} else {
+			this.$nextHeader.hide();
+			this.$restHeaderCaption.text("Here are your tasks in very rough order:");
+		}
 
-		this.$restHeader.toggle(this.taskListView.taskCount() > 0);
-		this.$wfHeader.toggle(this.wfTaskListView.taskCount() > 0);
+		if (forest.restTasks.length > 0) {
+			this.$restHeader.show();
+		} else {
+			this.$restHeader.hide();
+		}
+
+		if (forest.wfTasks.length > 0) {
+			this.$wfHeader.show();
+		} else {
+			this.$wfHeader.hide();
+		}
+
 		this.$addHeader.text(this.pile.tasks.length > 0 ? "Add more tasks:" : "Add tasks:");
-
 		this.$el.toggleClass("non-empty", this.pile.tasks.length > 0);
 
 		return this;
@@ -153,11 +155,6 @@ var PileView = Backbone.View.extend({
 
 			return age / (range / 2); // divided by 2 so you'll see a task twice in the period, or so
 		}
-	},
-
-	isNextTask: function (task) {
-		var nexts = this.pile.taskForest.potentialNextTasks();
-		return nexts.length === 1 && nexts[0].cid === task.cid;
 	},
 });
 
@@ -368,31 +365,19 @@ var SelectionView = Backbone.View.extend({
 });
 
 var TaskListView = Backbone.View.extend({
-	constructor: function (options) {
-		this.taskFilter = (options || {}).taskFilter || function () { return true };
-		if (options.comparator) this.comparator = options.comparator;
-		Backbone.View.apply(this, arguments);
-	},
-
 	initialize: function () {
-		this.pile = this.model;
-		this.tasks = this.pile.tasks;
+		this.tasks = this.model;
+		this.pile = this.model.pile;
 		this.taskViews = {};
 
-		this.listenTo(this.pile.taskForest, "recalculate", this._syncViews);
+		this.listenTo(this.tasks, "reset", this._syncViews);
 		this._syncViews();
 	},
 
-	taskCount: function () {
-		return _.keys(this.taskViews).length;
-	},
-
 	_syncViews: function () {
-		var tasks = this.tasks.filter(this.taskFilter);
+		var tasks = this.tasks.toArray();
+
 		var tasksByCid = _.indexBy(tasks, "cid");
-		if (this.comparator) {
-			tasks = _.sortBy(tasks, this.comparator);
-		}
 
 		var oldCids = _.keys(this.taskViews);
 		var newCids = _.pluck(tasks, "cid");
@@ -451,7 +436,7 @@ var TaskView = Backbone.View.extend({
 		_.each(Task.timeScales, function (scale) {
 			var $option = $("<option />", {
 				value: scale.id,
-				text: scale.label,
+				text: "do " + scale.label,
 			});
 			this.$timeScaleSelect.append($option);
 		}, this);
