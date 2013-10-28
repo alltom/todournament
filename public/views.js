@@ -381,6 +381,7 @@ var TaskListView = Backbone.View.extend({
 		this.listenTo(this.tasks, "reset", this._syncViews);
 		this.listenTo(this.tasks, "sort", this._syncViews);
 		this.listenTo(this.tasks, "change:waitingFor", this._syncViews); // TODO: this one could be done more efficiently
+		this.listenTo(this.pile.taskForest, "recalculate", this._syncViews);
 
 		this.taskViews = [];
 

@@ -149,8 +149,6 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 
 		this.tasks.each(this._addTask, this);
 		this.comparisons.each(this._addComparison, this);
-
-		this.trigger("recalculate");
 	},
 
 	_debug: function () {
