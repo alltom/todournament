@@ -457,7 +457,8 @@ var TaskView = Backbone.View.extend({
 		}, this);
 
 		this.listenTo(this.task, "change:text", this.textUpdated);
-		this.listenTo(this.task, "change:timeScaleId", this.textUpdated);
+		this.listenTo(this.task, "change:timeScaleId", this.timeScaleUpdated);
+		this.listenTo(this.task, "change:waitingFor", this.wfUpdated);
 
 		this.timeScaleUpdated();
 		this.textUpdated();
