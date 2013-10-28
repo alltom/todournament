@@ -243,14 +243,7 @@ var Pile = Backbone.Model.extend({
 		this.comparisons = new ComparisonCollection(this.collection.store.makeStore("piles-" + this.id + "-comparisons"));
 		this.taskForest = new TaskForest(this.tasks, this.comparisons);
 
-		this.tasks.comparator = this.taskForest.taskComparator;
-		this.listenTo(this.taskForest, "recalculate", this._recalculated);
-
 		this.tasks.pile = this.comparisons.pile = this;
-	},
-
-	_recalculated: function () {
-		this.tasks.sort();
 	},
 
 	toJSON: function () {

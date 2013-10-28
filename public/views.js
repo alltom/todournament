@@ -52,6 +52,7 @@ var PileView = Backbone.View.extend({
 			el: this.$rest,
 			model: this.pile,
 			taskFilter: _.bind(function (t) { return !t.has("waitingFor") && !this.isNextTask(t) }, this),
+			comparator: this.pile.taskForest.taskComparator,
 		});
 		this.taskListView.render();
 
