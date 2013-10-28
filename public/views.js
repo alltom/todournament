@@ -546,7 +546,7 @@ var NewTasksView = Backbone.View.extend({
 			});
 			this.$timeScaleSelect.append($option);
 		}, this);
-		this.$timeScaleSelect.append("<option selected>whenever</option>");
+		this.$timeScaleSelect.append("<option value='' selected>whenever</option>");
 	},
 
 	textChanged: function () {
