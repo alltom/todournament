@@ -610,6 +610,7 @@ var NewTasksView = Backbone.View.extend({
 
 		this.trigger("add-many", texts, this.$timeScaleSelect.val());
 		this.$timeScaleSelect.val("");
+		this.$("#new-task-textarea").val("");
 		this.textChanged();
 	},
 
