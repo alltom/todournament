@@ -361,6 +361,7 @@ var SelectionView = Backbone.View.extend({
 
 	clicked: function (e, greaterTask, lesserTask) {
 		this.trigger("compared", greaterTask, lesserTask);
+		$(e.currentTarget).blur();
 	},
 });
 
