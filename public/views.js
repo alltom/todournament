@@ -391,9 +391,9 @@ var ReprioritizeDueView = Backbone.View.extend({
 		}, this);
 		this.comparisonsToInvalidate = [];
 
-		this.setPercent(this.$(".progress-bar.progress-bar-success"), this.counts.fine / this.total, "fine");
-		this.setPercent(this.$(".progress-bar.progress-bar-warning"), this.counts.danger / this.total, "danger");
-		this.setPercent(this.$(".progress-bar.progress-bar-danger"), this.counts.overdue / this.total, "overdue");
+		this.setProgress(this.$(".progress-bar.progress-bar-success"), this.counts.fine, this.total, "fine");
+		this.setProgress(this.$(".progress-bar.progress-bar-warning"), this.counts.danger, this.total, "danger");
+		this.setProgress(this.$(".progress-bar.progress-bar-danger"), this.counts.overdue, this.total, "overdue");
 
 		// the slider doesn't layout properly unless it's in the DOM initially,
 		// so wait until the dialog has been shown to add it
@@ -431,10 +431,12 @@ var ReprioritizeDueView = Backbone.View.extend({
 		this.$ok.prop("disabled", count === 0);
 	},
 
-	setPercent: function ($progressBar, percent, description) {
+	setProgress: function ($progressBar, count, total, description) {
+		var percent = count / total;
 		var outOf100 = percent * 100;
 		$progressBar.css("width", outOf100 + "%");
 		$progressBar.children("span").text(outOf100 + "% " + description);
+		$progressBar.prop("title", count + " task" + (count === 1 ? "" : "s"));
 	},
 
 	dueness: function (comparison) {
