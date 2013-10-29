@@ -302,16 +302,6 @@ var SelectionView = Backbone.View.extend({
 		if (task) {
 			var view = new TaskView({ model: task, className: "task selection-task" });
 			$el.append(view.el);
-
-			// var $restHeader = $('<strong>which you said you\'d do before:</strong>');
-			// var $rest = $('<div class="rest" />');
-			// for (var i = 0; i < 4; i++) {
-			// 	var $item = $('<div class="task" />', {
-			// 		text: "Task " + i,
-			// 	});
-			// 	$rest.append($item);
-			// }
-			// $el.append($task, $restHeader, $rest);
 		}
 	},
 
