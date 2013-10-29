@@ -7,7 +7,7 @@ var Task = Backbone.Model.extend({
 }, {
 	timeScales: [
 		{ id: "this-week",  label: "kinda soon", range: 7 * 24 * 60 * 60 * 1000 },
-		{ id: "today",      label: "really soon", range: 24 * 60 * 60 * 1000 },
+		{ id: "today",      label: "REALLY soon", range: 24 * 60 * 60 * 1000 },
 	],
 });
 
