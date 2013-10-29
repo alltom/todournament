@@ -10,7 +10,7 @@ var PileView = Backbone.View.extend({
 	      '<div class="jumbotron introduction">' +
 	      '<div class="container">' +
 	      '  <h2>What is Todournament?</h2>' +
-	      '  <p>Todournament is a to-do list that <strong>helps you prioritize</strong>. It\'s designed to <strong>minimize bookkeeping</strong> while keeping your list ordered. Add to-do items below to begin.</p>' +
+	      '  <p>Todournament helps you prioritize your to-do list by letting <strong>your tasks duke it out, tournament-style</strong>. It\'s designed to <strong>minimize bookkeeping</strong> while keeping your list ordered. Add to-do items below to begin.</p>' +
 	      '</div>' +
 	      '</div>' +
 	      '<h3 class="add">Add tasks:</h3>' +
