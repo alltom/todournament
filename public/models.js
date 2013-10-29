@@ -3,7 +3,6 @@
 var Task = Backbone.Model.extend({
 	defaults: {
 		text: "",
-		excludedContexts: [], // context names
 	},
 }, {
 	timeScales: [
