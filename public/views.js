@@ -98,6 +98,7 @@ var PileView = Backbone.View.extend({
 
 		if (forest.restTasks.length > 0) {
 			this.$restHeader.show();
+			this.$reprioritizeTop.toggle(this.pile.comparisons.where({invalidated: false}).length > 0);
 		} else {
 			this.$restHeader.hide();
 		}
@@ -133,28 +134,8 @@ var PileView = Backbone.View.extend({
 	},
 
 	reprioritizeTopClicked: function () {
-		var self = this;
-
-		var comparisons = this.pile.comparisons.where({invalidated: false});
-		var sortedComparisons = _.sortBy(comparisons, function (c) { return -dueness(c) }, this);
-		var closestToDue = sortedComparisons.slice(0, 10);
-		_.invoke(closestToDue, "invalidate");
-
-		function dueness(comparison) {
-			var age = (new Date) - Date.parse(comparison.get("createdAt"));
-			var range = 4 * 7 * 24 * 60 * 60 * 1000; // default range: 1 month
-
-			var greaterTask = self.pile.tasks.get(comparison.get("greaterTaskId"));
-			if (greaterTask) {
-				var timeScaleId = greaterTask.get("timeScaleId");
-				var timeScale = _.filter(Task.timeScales, function (scale) { return scale.id === timeScaleId })[0];
-				if (timeScale) {
-					range = timeScale.range;
-				}
-			}
-
-			return age / (range / 2); // divided by 2 so you'll see a task twice in the period, or so
-		}
+		var view = new ReprioritizeDueView({ model: this.pile });
+		view.$el.modal();
 	},
 });
 
@@ -362,6 +343,172 @@ var SelectionView = Backbone.View.extend({
 	clicked: function (e, greaterTask, lesserTask) {
 		this.trigger("compared", greaterTask, lesserTask);
 		$(e.currentTarget).blur();
+	},
+});
+
+var ReprioritizeDueView = Backbone.View.extend({
+	html: '<div class="modal-dialog">' +
+	      '  <div class="modal-content">' +
+	      '    <div class="modal-header">' +
+	      '      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
+	      '      <h4 class="modal-title">Reprioritize Due Tasks&#8230;</h4>' +
+	      '    </div>' +
+	      '    <div class="modal-body">' +
+	      '      <p>Drag the slider from the right to select how many tasks to reprioritize:</p>' +
+	      '      <form role="form">' +
+	      '        <div class="form-group">' +
+	      '          <div class="progress">' +
+	      '            <div class="progress-bar progress-bar-success" style="width: 50%"><span class="sr-only">50% Fine</span></div>' +
+	      '            <div class="progress-bar progress-bar-warning" style="width: 40%"><span class="sr-only">40% Danger</span></div>' +
+	      '            <div class="progress-bar progress-bar-danger" style="width: 11%"><span class="sr-only">10% Overdue</span></div>' +
+	      '          </div>' +
+	      '          <input type="text" class="sslider" style="width: 100%" />' +
+	      '        </div>' +
+	      '      </form>' +
+	      '      <p class="status">You\'ve selected <span></span>.</p>' +
+	      '    </div>' +
+	      '    <div class="modal-footer">' +
+	      '      <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>' +
+	      '      <button type="button" class="btn btn-primary" disabled>Reprioritize 0 tasks</button>' +
+	      '    </div>' +
+	      '  </div><!-- /.modal-content -->' +
+	      '</div><!-- /.modal-dialog -->',
+
+	className: "reprioritize-due-dialog modal fade",
+
+	events: {
+		"click .btn-primary" : "reprioritizeClicked",
+	},
+
+	initialize: function () {
+		this.pile = this.model;
+		this.$el.html(this.html);
+
+		this.$ok = this.$(".btn-primary");
+		this.$slider = this.$(".sslider");
+		this.$count = this.$("p.status span");
+
+		var comparisons = this.pile.comparisons.where({invalidated: false});
+		this.counts = { fine: 0, danger: 0, overdue: 0 };
+		this.total = comparisons.length;
+		this.sortedComparisons = _.sortBy(comparisons, function (c) {
+			var d = this.dueness(c);
+			if (d > 1) this.counts.overdue++;
+			else if (d > 0.5) this.counts.danger++;
+			else this.counts.fine++;
+			return -d;
+		}, this);
+		this.comparisonsToInvalidate = [];
+
+		this.setPercent(this.$(".progress-bar.progress-bar-success"), this.counts.fine / this.total, "fine");
+		this.setPercent(this.$(".progress-bar.progress-bar-warning"), this.counts.danger / this.total, "danger");
+		this.setPercent(this.$(".progress-bar.progress-bar-danger"), this.counts.overdue / this.total, "overdue");
+
+		// the slider doesn't layout properly unless it's in the DOM initially,
+		// so wait until the dialog has been shown to add it
+		// (strike one!)
+		this.$el.one("shown.bs.modal", _.bind(function () {
+			var initialValue = Math.max(-10, -this.total);
+
+			this.$slider.slider({
+				min: -this.total,
+				max: 0,
+				value: initialValue,
+				handle: "triangle",
+				formater: _.bind(function (x) { return this.format(-x).short }, this),
+			});
+			this.$slider.on("slide", _.bind(this.onSlide, this));
+
+			this.onSlide({ value: initialValue });
+		}, this));
+	},
+
+	reprioritizeClicked: function () {
+		_.invoke(this.comparisonsToInvalidate, "invalidate");
+
+		this.$el.one("hidden.bs.modal", _.bind(function () { this.$el.remove() }, this));
+		this.$el.modal("hide");
+	},
+
+	onSlide: function (e) {
+		var count = -e.value;
+		this.comparisonsToInvalidate = this.sortedComparisons.slice(0, count);
+
+		this.$count.text(this.format(count).long);
+
+		this.$ok.text("Reprioritize " + count + " task" + (count === 1 ? "" : "s"));
+		this.$ok.prop("disabled", count === 0);
+	},
+
+	setPercent: function ($progressBar, percent, description) {
+		var outOf100 = percent * 100;
+		$progressBar.css("width", outOf100 + "%");
+		$progressBar.children("span").text(outOf100 + "% " + description);
+	},
+
+	dueness: function (comparison) {
+		var age = (new Date) - Date.parse(comparison.get("createdAt"));
+		var range = 4 * 7 * 24 * 60 * 60 * 1000; // default range: 1 month
+
+		var greaterTask = this.pile.tasks.get(comparison.get("greaterTaskId"));
+		if (greaterTask) {
+			var timeScaleId = greaterTask.get("timeScaleId");
+			var timeScale = _.filter(Task.timeScales, function (scale) { return scale.id === timeScaleId })[0];
+			if (timeScale) {
+				range = timeScale.range;
+			}
+		}
+
+		return age / (range / 2); // divided by 2 so you'll see a task twice in the period, or so
+	},
+
+	format: function (count) {
+		if (count === 0) {
+			return { short: "0 tasks", long: "0 tasks" };
+		}
+
+		var numOverdue = Math.min(this.counts.overdue, count);
+		count = Math.max(0, count - this.counts.overdue);
+		var numDanger = Math.min(this.counts.danger, count);
+		count = Math.max(0, count - this.counts.danger);
+		var numFine = Math.min(this.counts.fine, count);
+
+		var descs = { short: [], long: [] };
+
+		if (numOverdue > 0 || (numDanger === 0 && numFine === 0)) {
+			descs.long.push(pluralize(numOverdue, "task that's overdue", "tasks that are overdue"));
+			descs.short.push(numOverdue + " overdue");
+		}
+		if (numDanger > 0) {
+			descs.long.push(pluralize(numDanger, "task that's almost due", "tasks that are almost due"));
+			descs.short.push(numDanger + " almost due");
+		}
+		if (numFine > 0) {
+			descs.long.push(pluralize(numFine, "task that's not due for a while", "tasks that aren't due for a while"));
+			descs.short.push(pluralize(numFine, "task", "tasks"));
+		}
+
+		descs.long = sentenceJoin(descs.long);
+		descs.short = descs.short.join(", ");
+		return descs;
+
+		function pluralize(num, singular, plural) {
+			if (num === 1) {
+				return num + " " + singular;
+			} else {
+				return num + " " + plural;
+			}
+		}
+
+		function sentenceJoin(arr) {
+			if (arr.length <= 1) {
+				return arr[0];
+			} else if (arr.length === 2) {
+				return arr[0] + " and " + arr[1];
+			} else {
+				return arr.slice(0, arr.length - 1).join(", ") + ", and " + arr[arr.length - 1];
+			}
+		}
 	},
 });
 
