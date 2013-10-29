@@ -248,7 +248,6 @@ var ImportExportView = Backbone.View.extend({
 			var piles = this.pile.collection;
 			var pileJSON = JSON.parse(this.$("textarea").val());
 			piles.clonePileFromJSON(pileJSON).then(_.bind(function (pile) {
-				this.$el.one("hidden.bs.modal", _.bind(function () { this.$el.remove() }, this));
 				this.$el.modal("hide");
 				goToPile(pile);
 			}, this), function (reason) {
@@ -417,7 +416,6 @@ var ReprioritizeDueView = Backbone.View.extend({
 	reprioritizeClicked: function () {
 		_.invoke(this.comparisonsToInvalidate, "invalidate");
 
-		this.$el.one("hidden.bs.modal", _.bind(function () { this.$el.remove() }, this));
 		this.$el.modal("hide");
 	},
 
@@ -735,4 +733,10 @@ var NewTasksView = Backbone.View.extend({
 	_isNotDuplicate: function (text) {
 		return !this._isDuplicate(text);
 	},
+});
+
+$(function () {
+	$(document).on("hidden.bs.modal", ".modal", function () {
+		$(this).remove();
+	});
 });
