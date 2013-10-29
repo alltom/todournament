@@ -248,6 +248,7 @@ var ImportExportView = Backbone.View.extend({
 			var piles = this.pile.collection;
 			var pileJSON = JSON.parse(this.$("textarea").val());
 			piles.clonePileFromJSON(pileJSON).then(_.bind(function (pile) {
+				this.$el.one("hidden.bs.modal", _.bind(function () { this.$el.remove() }, this));
 				this.$el.modal("hide");
 				goToPile(pile);
 			}, this), function (reason) {
