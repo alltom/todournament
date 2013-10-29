@@ -3,7 +3,7 @@ var PileView = Backbone.View.extend({
 	      '<div class="well selection" />' +
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
-	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks</button></h3>' +
+	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button></h3>' +
 	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
 	      '  <div class="task-list wf"></div>' +
@@ -342,7 +342,7 @@ var ReprioritizeDueView = Backbone.View.extend({
 	      '  <div class="modal-content">' +
 	      '    <div class="modal-header">' +
 	      '      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
-	      '      <h4 class="modal-title">Reprioritize Due Tasks&#8230;</h4>' +
+	      '      <h4 class="modal-title">Reprioritize Due Tasks</h4>' +
 	      '    </div>' +
 	      '    <div class="modal-body">' +
 	      '      <p>Drag the slider from the right to select how many tasks to reprioritize:</p>' +
