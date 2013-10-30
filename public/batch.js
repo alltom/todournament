@@ -4,16 +4,12 @@
 
 	// perform a batch operation
 	window.doBatch = function (op, context) {
-		console.group("batch");
 		batches++;
 		try {
 			op.call(context);
 		} finally {
 			--batches;
-			console.log("exec waiters");
 			execWaitersIfNecessary();
-			console.log("batch done");
-			console.groupEnd();
 		}
 	};
 
@@ -52,9 +48,3 @@
 		});
 	}
 }());
-
-// batch(function () {
-// 	destroyAll();
-// });
-
-// on("x", atBatchEnd(function () { console.log("a batch is over!") }));
