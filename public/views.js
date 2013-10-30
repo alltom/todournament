@@ -69,8 +69,8 @@ var PileView = Backbone.View.extend({
 		this.newTasksView.on("add-many", this.addNewTasks, this);
 		this.newTasksView.render();
 
-		this.listenTo(this.pile.tasks, "add remove reset change:waitingFor", this.render);
-		this.listenTo(this.pile.comparisons, "add remove reset change:greaterTaskId change:lesserTaskId change:invalidated", this.render);
+		this.listenTo(this.pile.tasks, "add remove reset change:waitingFor", atBatchEnd(this.render, this));
+		this.listenTo(this.pile.comparisons, "add remove reset change:greaterTaskId change:lesserTaskId change:invalidated", atBatchEnd(this.render, this));
 	},
 
 	render: function () {
@@ -116,13 +116,15 @@ var PileView = Backbone.View.extend({
 	},
 
 	addNewTasks: function (texts, timeScaleId) {
-		var tasks = this.pile.tasks.add(_.map(texts, function (text) {
-			return {
-				text: text,
-				timeScaleId: timeScaleId,
-			};
-		}));
-		_.invoke(tasks, "save");
+		doBatch(function () {
+			var tasks = this.pile.tasks.add(_.map(texts, function (text) {
+				return {
+					text: text,
+					timeScaleId: timeScaleId,
+				};
+			}));
+			_.invoke(tasks, "save");
+		}, this);
 		$(document.body).scrollTop(0);
 	},
 
@@ -181,7 +183,7 @@ var NavBarView = Backbone.View.extend({
 		this.$el.html(this.html);
 
 		this.$taskCount = this.$(".description .count");
-		this.listenTo(this.pile.tasks, "add remove reset", this.taskCountChanged);
+		this.listenTo(this.pile.tasks, "add remove reset", atBatchEnd(this.taskCountChanged, this));
 		this.taskCountChanged();
 
 		this.$(".description abbr").tooltip({ placement: "bottom" });
@@ -414,7 +416,9 @@ var ReprioritizeDueView = Backbone.View.extend({
 	},
 
 	reprioritizeClicked: function () {
-		_.invoke(this.comparisonsToInvalidate, "invalidate");
+		doBatch(function () {
+			_.invoke(this.comparisonsToInvalidate, "invalidate");
+		}, this);
 
 		this.$el.modal("hide");
 	},
@@ -509,7 +513,7 @@ var TaskListView = Backbone.View.extend({
 		this.pile = this.model.pile;
 		this.taskViews = {};
 
-		this.listenTo(this.tasks, "reset", this._syncViews);
+		this.listenTo(this.tasks, "reset", atBatchEnd(this._syncViews, this));
 		this._syncViews();
 	},
 

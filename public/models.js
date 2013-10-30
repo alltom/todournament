@@ -72,8 +72,8 @@ function TaskForest(tasks, comparisons) {
 
 	this._recalculate();
 
-	this.listenTo(tasks, "add remove reset change:waitingFor", this._recalculate);
-	this.listenTo(comparisons, "add remove reset sort change:invalidated", this._recalculate);
+	this.listenTo(tasks, "add remove reset change:waitingFor", atBatchEnd(this._recalculate, this));
+	this.listenTo(comparisons, "add remove reset sort change:invalidated", atBatchEnd(this._recalculate, this));
 
 	// this.listenTo(this, "recalculate", this._debug);
 }
