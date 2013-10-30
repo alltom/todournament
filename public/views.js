@@ -651,6 +651,7 @@ var TaskView = Backbone.View.extend({
 	},
 
 	deleteClicked: function () {
+		console.log("destorying task", this.task.text);
 		this.task.destroy();
 	},
 });
