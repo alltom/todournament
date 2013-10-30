@@ -631,9 +631,11 @@ var TaskView = Backbone.View.extend({
 			this.model.collection.pile.comparisons.where({ lesserTaskId: this.task.id }),
 			this.model.collection.pile.comparisons.where({ greaterTaskId: this.task.id })
 		);
-		_.each(comparisons, function (comparison) {
-			comparison.invalidate();
-		});
+		doBatch(function () {
+			_.each(comparisons, function (comparison) {
+				comparison.invalidate();
+			});
+		}, this);
 	},
 
 	putOffClicked: function () {
