@@ -78,6 +78,21 @@ function TaskForest(tasks, comparisons) {
 	// this.listenTo(this, "recalculate", this._debug);
 }
 _.extend(TaskForest.prototype, Backbone.Events, {
+	randomComparisonTaskPair: function () {
+		if (this.potentialNextTasks.length <= 2) {
+			return this.potentialNextTasks.slice(0, 2);
+		}
+
+		var self = this;
+
+		return this.potentialNextTasks.chain().map(function (task) {
+			return {
+				task: task,
+				weight: Math.random() / self._size[task.cid],
+			};
+		}).sortBy("weight").reverse().pluck("task").value().slice(0, 2);
+	},
+
 	taskComparator: function (task1, task2) {
 		var level1 = this._level(task1.cid);
 		var level2 = this._level(task2.cid);
@@ -143,6 +158,7 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 	_addTask: function (task) {
 		this._children[task.cid] = [];
 		this._parents[task.cid] = [];
+		this._size[task.cid] = 1;
 		this._roots.push(task.cid);
 	},
 
@@ -169,6 +185,7 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 	_recalculate: function () {
 		this._children = {}; // cid -> [cid, ...]
 		this._parents = {}; // cid -> [cid, ...]
+		this._size = {}; // cid -> int
 		this._roots = []; // [cid, ...]
 
 		this.tasks.each(this._addTask, this);
@@ -191,6 +208,12 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 	_addChild: function (parentCid, childCid) {
 		addToSet(this._children[parentCid], childCid);
 		addToSet(this._parents[childCid], parentCid);
+
+		this._size[parentCid] += this._size[childCid];
+		var parentParents = this._allParents(parentCid);
+		_.each(parentParents, function (cid) {
+			this._size[cid] += this._size[childCid];
+		}, this);
 	},
 
 	_allParents: function (cid) {

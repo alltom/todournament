@@ -77,7 +77,7 @@ var PileView = Backbone.View.extend({
 		var forest = this.pile.taskForest;
 
 		if (forest.potentialNextTasks.length > 1) {
-			var pair = forest.potentialNextTasks.shuffle().slice(0, 2);
+			var pair = forest.randomComparisonTaskPair();
 			var numActiveTasks = forest.nextTasks.length + forest.restTasks.length;
 			var progress = 1 - ((forest.potentialNextTasks.length - 1) / numActiveTasks);
 
@@ -358,7 +358,7 @@ var SelectionView = Backbone.View.extend({
 		this.$left = this.$(".task-row .left");
 		this.$right = this.$(".task-row .right");
 
-		this.$("button.shuffle").tooltip({ placement: "bottom" });
+		this.$("button.shuffle").tooltip({ placement: "top" });
 	},
 
 	render: function () {
