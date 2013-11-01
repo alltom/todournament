@@ -104,6 +104,10 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		} else if (level2 === undefined) {
 			return -1;
 		}
+
+		if (level1 === level2) {
+			return this._size[task2.cid] - this._size[task1.cid];
+		}
 		return level1 - level2;
 	},
 
