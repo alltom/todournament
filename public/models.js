@@ -209,6 +209,7 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		addToSet(this._children[parentCid], childCid);
 		addToSet(this._parents[childCid], parentCid);
 
+		// XXX: not accurate because may have already been a child
 		this._size[parentCid] += this._size[childCid];
 		var parentParents = this._allParents(parentCid);
 		_.each(parentParents, function (cid) {
