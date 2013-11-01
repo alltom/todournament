@@ -295,8 +295,8 @@ var ImportExportView = Backbone.View.extend({
 	      '      </form>' +
 	      '    </div>' +
 	      '    <div class="modal-footer">' +
-	      '      <button type="button" class="btn btn-default import-copy">Import as a Copy&#8230;</button>' +
-	      '      <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>' +
+	      '      <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>' +
+	      '      <button type="button" class="btn btn-warning import-copy">Import as a Copy&#8230;</button>' +
 	      '    </div>' +
 	      '  </div><!-- /.modal-content -->' +
 	      '</div><!-- /.modal-dialog -->',
