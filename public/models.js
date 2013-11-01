@@ -4,6 +4,19 @@ var Task = Backbone.Model.extend({
 	defaults: {
 		text: "",
 	},
+
+	putOff: function (until) {
+		this.save({
+			waitingFor: until,
+			waitingForSetAt: new Date,
+		});
+	},
+
+	resume: function () {
+		this.unset("waitingFor");
+		this.unset("waitingForSetAt");
+		this.save();
+	},
 }, {
 	timeScales: [
 		{ id: "this-week",  label: "kinda soon", range: 7 * 24 * 60 * 60 * 1000 },

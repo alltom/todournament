@@ -710,13 +710,12 @@ var TaskView = Backbone.View.extend({
 	putOffClicked: function () {
 		var wf = prompt("What are you waiting for?\n(ex: Tuesday, extra cash, the office)");
 		if (wf !== null) {
-			this.task.save({ waitingFor: wf });
+			this.task.putOff(wf);
 		}
 	},
 
 	readyClicked: function () {
-		this.task.unset("waitingFor");
-		this.task.save();
+		this.task.resume();
 	},
 
 	deleteClicked: function () {
