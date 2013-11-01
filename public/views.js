@@ -84,8 +84,11 @@ var PileView = Backbone.View.extend({
 			this.selectionView.prepare(pair[0], pair[1], progress);
 			this.selectionView.render();
 			this.$selection.show();
+
+			this.navBarView.showComparisonLink(this.$selection);
 		} else {
 			this.$selection.hide();
+			this.navBarView.showComparisonLink(false);
 		}
 
 		if (forest.nextTasks.length > 0) {
@@ -103,14 +106,25 @@ var PileView = Backbone.View.extend({
 			this.$restHeader.hide();
 		}
 
+		if (forest.nextTasks.length > 0) {
+			this.navBarView.showTasksLink(this.$nextHeader);
+		} else if (forest.restTasks.length > 0) {
+			this.navBarView.showTasksLink(this.$restHeader);
+		} else {
+			this.navBarView.showTasksLink(false);
+		}
+
 		if (forest.wfTasks.length > 0) {
 			this.$wfHeader.show();
+			this.navBarView.showWfTasksLink(this.$wfHeader);
 		} else {
 			this.$wfHeader.hide();
+			this.navBarView.showWfTasksLink(false);
 		}
 
 		this.$addHeader.text(this.pile.tasks.length > 0 ? "Add more tasks:" : "Add tasks:");
 		this.$el.toggleClass("non-empty", this.pile.tasks.length > 0);
+		this.navBarView.showAddTasksLink(this.$addHeader);
 
 		return this;
 	},
@@ -154,26 +168,32 @@ var NavBarView = Backbone.View.extend({
 	      '</div>' +
 	      '<div class="collapse navbar-collapse navbar-ex1-collapse">' +
 	      '  <ul class="nav navbar-nav">' +
+	      '    <li><a href="#" class="comparison">Comparison</a></li>' +
+	      '    <li><a href="#" class="tasks">Tasks</a></li>' +
+	      '    <li><a href="#" class="wf-tasks">Put-Off Tasks</a></li>' +
+	      '    <li><a href="#" class="add">Add Tasks</a></li>' +
 	      // '  <form class="navbar-form navbar-left">' +
 	      // '    <div class="form-group">' +
 	      // '      <select class="form-control"><option>Foo bar</option></select>' +
 	      // '    </div>' +
 	      // '  </form>' +
-	      // '    <li class="dropdown">' +
-	      // '      <a href="#" class="dropdown-toggle" data-toggle="dropdown">Utility <b class="caret"></b></a>' +
-	      // '      <ul class="dropdown-menu">' +
-	      // '        <li><a href="#">Import</a></li>' +
-	      // '        <li><a href="#">Export</a></li>' +
-	      // '      </ul>' +
-	      // '    </li>' +
-	      '    <li><button type="button" class="btn btn-default navbar-btn export">Import/Export&#8230;</button></li>' +
-	      '    <li><button type="button" class="btn btn-default navbar-btn purge">Purge&#8230;</button></li>' +
+	      '    <li class="dropdown">' +
+	      '      <a href="#" class="dropdown-toggle" data-toggle="dropdown">Maintenance <b class="caret"></b></a>' +
+	      '      <ul class="dropdown-menu">' +
+	      '        <li><a href="#" class="export">Import/Export&#8230;</a></li>' +
+	      '        <li><a href="#" class="purge">Purge&#8230;</a></li>' +
+	      '      </ul>' +
+	      '    </li>' +
 	      '  </ul>' +
-	      '  <p class="navbar-text description"><span class="count"></span>, saved in <abbr data-toggle="tooltip" title="Saved on your computer (not our server), so don\'t clear your cookies! Dropbox support coming soon.">Local Storage</abbr></p>' +
+	      '  <p class="navbar-text description visible-lg"><span class="count"></span>, saved in <abbr data-toggle="tooltip" title="Saved on your computer (not our server), so don\'t clear your cookies! Dropbox support coming soon.">Local Storage</abbr></p>' +
 	      '</div>' +
 	      '</nav>',
 
 	events: {
+		"click .comparison" : "comparisonClicked",
+		"click .tasks" : "tasksClicked",
+		"click .wf-tasks" : "wfTasksClicked",
+		"click .add" : "addTasksClicked",
 		"click .export" : "importExportClicked",
 		"click .purge" : "purgeClicked",
 	},
@@ -181,6 +201,11 @@ var NavBarView = Backbone.View.extend({
 	initialize: function () {
 		this.pile = this.model;
 		this.$el.html(this.html);
+
+		this.$comparisonLink = this.$(".comparison").hide();
+		this.$tasksLink = this.$(".tasks").hide();
+		this.$wfTasksLink = this.$(".wf-tasks").hide();
+		this.$addTasksLink = this.$(".add").hide();
 
 		this.$taskCount = this.$(".description .count");
 		this.listenTo(this.pile.tasks, "add remove reset", atBatchEnd(this.taskCountChanged, this));
@@ -193,12 +218,54 @@ var NavBarView = Backbone.View.extend({
 		this.$taskCount.text(this.pile.tasks.length + " task" + (this.pile.tasks.length === 1 ? "" : "s"));
 	},
 
-	importExportClicked: function () {
+	showComparisonLink: function ($dom) {
+		this.$comparisonLink.toggle(!!$dom);
+		this.$comparisonLinkTarget = $dom;
+	},
+
+	showTasksLink: function ($dom) {
+		this.$tasksLink.toggle(!!$dom);
+		this.$tasksLinkTarget = $dom;
+	},
+
+	showWfTasksLink: function ($dom) {
+		this.$wfTasksLink.toggle(!!$dom);
+		this.$wfTasksLinkTarget = $dom;
+	},
+
+	showAddTasksLink: function ($dom) {
+		this.$addTasksLink.toggle(!!$dom);
+		this.$addTasksLinkTarget = $dom;
+	},
+
+	comparisonClicked: function (e) {
+		e.preventDefault();
+		$(document.body).animate({ scrollTop: this.$comparisonLinkTarget.offset().top - 20 });
+	},
+
+	tasksClicked: function (e) {
+		e.preventDefault();
+		$(document.body).animate({ scrollTop: this.$tasksLinkTarget.offset().top - 10 });
+	},
+
+	wfTasksClicked: function (e) {
+		e.preventDefault();
+		$(document.body).animate({ scrollTop: this.$wfTasksLinkTarget.offset().top - 10 });
+	},
+
+	addTasksClicked: function (e) {
+		e.preventDefault();
+		$(document.body).animate({ scrollTop: this.$addTasksLinkTarget.offset().top - 10 });
+	},
+
+	importExportClicked: function (e) {
+		e.preventDefault();
 		var view = new ImportExportView({ model: this.pile });
 		view.$el.modal();
 	},
 
-	purgeClicked: function () {
+	purgeClicked: function (e) {
+		e.preventDefault();
 		if (confirm("Purge deleted tasks and comparisons? Do this if things get slow. You can use the \"Import/Export\" button to make a backup in case you ever want them back.")) {
 			var toDestroy = this.pile.comparisons.filter(function (comparison) {
 				var greaterTask = this.pile.tasks.get(comparison.get("greaterTaskId"));
