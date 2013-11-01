@@ -329,7 +329,7 @@ var ImportExportView = Backbone.View.extend({
 });
 
 var SelectionView = Backbone.View.extend({
-	html: '<div class="question text-center">Which is it more important to do first?</div>' +
+	html: '<div class="question text-center">Which is more important to do first?</div>' +
 	      '<div class="row text-center button-row">' +
 	      '  <div class="left col-md-5"><button type="button" class="btn btn-success">This One!</button></div>' +
 	      '  <div class="col-md-2"><button type="button" class="btn btn-xs btn-default shuffle" data-toggle="tooltip" title="Choose another 2 tasks to compare instead.">I can\'t decide!</button></div>' +
