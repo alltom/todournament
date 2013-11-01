@@ -93,7 +93,7 @@ function TaskForest(tasks, comparisons) {
 _.extend(TaskForest.prototype, Backbone.Events, {
 	randomComparisonTaskPair: function () {
 		if (this.potentialNextTasks.length <= 2) {
-			return this.potentialNextTasks.slice(0, 2);
+			return _.shuffle(this.potentialNextTasks.slice(0, 2));
 		}
 
 		var self = this;
@@ -103,7 +103,7 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 				task: task,
 				weight: Math.random() / self._size[task.cid],
 			};
-		}).sortBy("weight").reverse().pluck("task").value().slice(0, 2);
+		}).sortBy("weight").reverse().slice(0, 2).shuffle().pluck("task").value();
 	},
 
 	taskComparator: function (task1, task2) {
