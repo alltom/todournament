@@ -168,10 +168,15 @@ var NavBarView = Backbone.View.extend({
 	      '</div>' +
 	      '<div class="collapse navbar-collapse navbar-ex1-collapse">' +
 	      '  <ul class="nav navbar-nav">' +
-	      '    <li><a href="#" class="comparison">Comparison</a></li>' +
-	      '    <li><a href="#" class="tasks">Tasks</a></li>' +
-	      '    <li><a href="#" class="wf-tasks">Put-Off Tasks</a></li>' +
-	      '    <li><a href="#" class="add">Add Tasks</a></li>' +
+	      '    <li class="dropdown">' +
+	      '      <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tasks <b class="caret"></b></a>' +
+	      '      <ul class="dropdown-menu">' +
+	      '        <li><a href="#" class="comparison">Comparison</a></li>' +
+	      '        <li><a href="#" class="tasks">Next Tasks</a></li>' +
+	      '        <li><a href="#" class="wf-tasks">Put-Off Tasks</a></li>' +
+	      '        <li><a href="#" class="add">Add Tasks</a></li>' +
+	      '      </ul>' +
+	      '    </li>' +
 	      // '  <form class="navbar-form navbar-left">' +
 	      // '    <div class="form-group">' +
 	      // '      <select class="form-control"><option>Foo bar</option></select>' +
