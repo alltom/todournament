@@ -1,6 +1,6 @@
 var PileView = Backbone.View.extend({
 	html: '<div class="navigation" />' +
-	      '<div class="well selection" />' +
+	      '<div class="selection well" />' +
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
 	      '  <div class="task-list next-progress"></div>' +
@@ -26,7 +26,7 @@ var PileView = Backbone.View.extend({
 		this.pile = this.model;
 
 		this.$el.html(this.html);
-		this.$selection = this.$(".selection");
+		this.$selection = this.$(".selection").hide();
 		this.$newTask = this.$(".new-task");
 		this.$reprioritizeTop = this.$(".reprioritize-top");
 
@@ -90,11 +90,11 @@ var PileView = Backbone.View.extend({
 			this.$selection.show();
 
 			this.nextProgressView.update(forest.potentialNextTasks.length - 1, progress);
-			this.$nextProgress.show();
+			this.$nextProgress.fadeIn();
 
 			this.navBarView.showComparisonLink(this.$selection);
 		} else {
-			this.$selection.hide();
+			this.$selection.fadeOut();
 			this.$nextProgress.hide();
 			this.navBarView.showComparisonLink(false);
 		}
@@ -344,29 +344,24 @@ var ImportExportView = Backbone.View.extend({
 });
 
 var SelectionView = Backbone.View.extend({
-	html: '<div class="question text-center">Which is more important to do first?</div>' +
-	      '<div class="row text-center button-row">' +
-	      '  <div class="left col-md-5"><button type="button" class="btn btn-success">This One!</button></div>' +
-	      '  <div class="col-md-2"><button type="button" class="btn btn-xs btn-default shuffle" data-toggle="tooltip" title="Choose another 2 tasks to compare instead.">I can\'t decide!</button></div>' +
-	      '  <div class="right col-md-5"><button type="button" class="btn btn-success">This One!</button></div>' +
-	      '</div>' +
+	html: '<div class="question text-center">Which is more important to do first?<br /><button type="button" class="btn btn-xs btn-default shuffle" data-toggle="tooltip" title="Choose another 2 tasks to compare instead.">I can\'t decide!</button></div>' +
 	      '<div class="row task-row">' +
-	      '  <div class="left col-md-6"></div>' +
-	      '  <div class="right col-md-6"></div>' +
+	      '  <div class="col-md-6"><div class="left"><button type="button" class="btn btn-success this-one">This One!</button><div class="task selection-task"></div></div></div>' +
+	      '  <div class="col-md-6"><div class="right"><button type="button" class="btn btn-success this-one">This One!</button><div class="task selection-task"></div></div></div>' +
 	      '</div>',
 
 	className: "selection",
 
 	events: {
 		"click .shuffle" : "shuffleClicked",
-		"click .button-row .left button" : "leftClicked",
-		"click .button-row .right button" : "rightClicked",
+		"click .left button.this-one" : "leftClicked",
+		"click .right button.this-one" : "rightClicked",
 	},
 
 	initialize: function () {
 		this.$el.html(this.html);
-		this.$left = this.$(".task-row .left");
-		this.$right = this.$(".task-row .right");
+		this.$left = this.$(".task-row .left .task");
+		this.$right = this.$(".task-row .right .task");
 
 		this.$("button.shuffle").tooltip({ placement: "top" });
 	},
@@ -380,8 +375,10 @@ var SelectionView = Backbone.View.extend({
 		$el.empty();
 
 		if (task) {
-			var view = new TaskView({ model: task, className: "task selection-task" });
-			$el.append(view.el);
+			var view = new TaskView({
+				model: task,
+				el: $el[0],
+			});
 		}
 	},
 

@@ -20,7 +20,8 @@ body {
 
 .selection {
 	margin-top: 20px;
-	padding-bottom: 0;
+	padding: 10px 10px 0;
+	background: white;
 }
 
 .selection .question {
@@ -28,6 +29,10 @@ body {
 	font-weight: 500;
 	line-height: 1.1;
 	margin-bottom: 10px;
+}
+
+.selection .shuffle {
+	text-align: center;
 }
 
 .selection .task {
@@ -41,6 +46,10 @@ body {
 
 .selection .rest .task .tools {
 	display: none;
+}
+
+.selection button.this-one {
+	width: 100%;
 }
 
 .task-list .task {
