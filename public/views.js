@@ -3,6 +3,7 @@ var PileView = Backbone.View.extend({
 	      '<div class="well selection" />' +
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
+	      '  <div class="task-list next-progress"></div>' +
 	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button></h3>' +
 	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
@@ -31,6 +32,7 @@ var PileView = Backbone.View.extend({
 
 		this.$nextHeader = this.$("h3.next-task");
 		this.$next = this.$(".next");
+		this.$nextProgress = this.$(".next-progress");
 
 		this.$restHeader = this.$("h3.tasks");
 		this.$restHeaderCaption = this.$("h3.tasks span");
@@ -54,6 +56,8 @@ var PileView = Backbone.View.extend({
 			el: this.$next,
 			model: this.pile.taskForest.nextTasks,
 		});
+		this.nextProgressView = new TaskProgressView();
+		this.$nextProgress.append(this.nextProgressView.render().el);
 
 		this.taskListView = new TaskListView({
 			el: this.$rest,
@@ -81,21 +85,23 @@ var PileView = Backbone.View.extend({
 			var numActiveTasks = forest.nextTasks.length + forest.restTasks.length;
 			var progress = 1 - ((forest.potentialNextTasks.length - 1) / numActiveTasks);
 
-			this.selectionView.prepare(pair[0], pair[1], progress);
+			this.selectionView.prepare(pair[0], pair[1]);
 			this.selectionView.render();
 			this.$selection.show();
+
+			this.nextProgressView.update(forest.potentialNextTasks.length - 1, progress);
+			this.$nextProgress.show();
 
 			this.navBarView.showComparisonLink(this.$selection);
 		} else {
 			this.$selection.hide();
+			this.$nextProgress.hide();
 			this.navBarView.showComparisonLink(false);
 		}
 
 		if (forest.nextTasks.length > 0) {
-			this.$nextHeader.show();
 			this.$restHeaderCaption.text("Here are the rest of your tasks in very rough order:");
 		} else {
-			this.$nextHeader.hide();
 			this.$restHeaderCaption.text("Here are your tasks in very rough order:");
 		}
 
@@ -347,11 +353,6 @@ var SelectionView = Backbone.View.extend({
 	      '<div class="row task-row">' +
 	      '  <div class="left col-md-6"></div>' +
 	      '  <div class="right col-md-6"></div>' +
-	      '</div>' +
-	      '<div class="progress">' +
-	      '  <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">' +
-	      '    <span class="sr-only">0% Complete</span>' +
-	      '  </div>' +
 	      '</div>',
 
 	className: "selection",
@@ -387,15 +388,6 @@ var SelectionView = Backbone.View.extend({
 	prepare: function (leftTask, rightTask, progress) {
 		this.leftTask = leftTask;
 		this.rightTask = rightTask;
-		this.setProgress(progress);
-	},
-
-	setProgress: function (percent) {
-		var outOf100 = percent * 100;
-		this.$(".progress-bar")
-			.prop("aria-valuenow", Math.floor(outOf100))
-			.css("width", outOf100 + "%");
-		this.$(".progress-bar span").text(outOf100 + "% Complete");
 	},
 
 	shuffleClicked: function () {
@@ -730,6 +722,31 @@ var TaskView = Backbone.View.extend({
 	deleteClicked: function () {
 		console.log("destorying task", this.task.text);
 		this.task.destroy();
+	},
+});
+
+var TaskProgressView = Backbone.View.extend({
+	html: '<div class="message"></div>' +
+	      '<div class="progress">' +
+	      '  <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">' +
+	      '    <span class="sr-only">0% Complete</span>' +
+	      '  </div>' +
+	      '</div>',
+
+	className: "task",
+
+	initialize: function () {
+		this.$el.html(this.html);
+	},
+
+	update: function (comparisonsLeft, percent) {
+		this.$(".message").html(comparisonsLeft + " comparison" + (comparisonsLeft === 1 ? "" : "s") + " until this next task is known&#8230;");
+
+		var outOf100 = percent * 100;
+		this.$(".progress-bar")
+			.prop("aria-valuenow", Math.floor(outOf100))
+			.css("width", outOf100 + "%");
+		this.$(".progress-bar span").text(outOf100 + "% Complete");
 	},
 });
 
