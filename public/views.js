@@ -255,7 +255,11 @@ var NavBarView = Backbone.View.extend({
 
 	addTasksClicked: function (e) {
 		e.preventDefault();
-		$(document.body).animate({ scrollTop: this.$addTasksLinkTarget.offset().top - 10 });
+		$(document.body).animate({
+			scrollTop: this.$addTasksLinkTarget.offset().top - 10,
+		}, function () {
+			$("#new-task-textarea").focus();
+		});
 	},
 
 	importExportClicked: function (e) {
