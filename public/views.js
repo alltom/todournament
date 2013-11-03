@@ -4,7 +4,7 @@ var PileView = Backbone.View.extend({
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
 	      '  <div class="task-list next-progress"></div>' +
-	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-default reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button></h3>' +
+	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-info reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button></h3>' +
 	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
 	      '  <div class="task-list wf"></div>' +
@@ -614,7 +614,7 @@ var TaskView = Backbone.View.extend({
 	html: '<div class="tools">' +
 	      '<select></select>' +
 	      '<button type="button" class="btn btn-xs btn-default edit">Edit&#8230;</button>' +
-	      '<button type="button" class="btn btn-xs btn-default reprioritize">Reprioritize</button>' +
+	      '<button type="button" class="btn btn-xs btn-info reprioritize">Reprioritize</button>' +
 	      '<button type="button" class="btn btn-xs btn-warning put-off">Put Off&#8230;</button>' +
 	      '<button type="button" class="btn btn-xs btn-success ready">Ready!</button>' +
 	      '<button type="button" class="btn btn-xs btn-danger delete">Delete</button>' +
