@@ -737,7 +737,7 @@ var TaskProgressView = Backbone.View.extend({
 	},
 
 	update: function (comparisonsLeft, percent) {
-		this.$(".message").html(comparisonsLeft + " comparison" + (comparisonsLeft === 1 ? "" : "s") + " until this next task is known&#8230;");
+		this.$(".message").html(comparisonsLeft + " comparison" + (comparisonsLeft === 1 ? "" : "s") + " until next task is known&#8230;");
 
 		var outOf100 = percent * 100;
 		this.$(".progress-bar")
