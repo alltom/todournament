@@ -4,7 +4,7 @@ var PileView = Backbone.View.extend({
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
 	      '  <div class="task-list next-progress"></div>' +
-	      '<h3 class="tasks"><span>Here are your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-info reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button></h3>' +
+	      '<h3 class="tasks"><span>Here are the rest of your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-info reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button></h3>' +
 	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
 	      '  <div class="task-list wf"></div>' +
@@ -99,12 +99,6 @@ var PileView = Backbone.View.extend({
 			this.navBarView.showComparisonLink(false);
 		}
 
-		if (forest.nextTasks.length > 0) {
-			this.$restHeaderCaption.text("Here are the rest of your tasks in very rough order:");
-		} else {
-			this.$restHeaderCaption.text("Here are your tasks in very rough order:");
-		}
-
 		if (forest.restTasks.length > 0) {
 			this.$restHeader.show();
 			this.$reprioritizeTop.toggle(this.pile.comparisons.where({invalidated: false}).length > 0);
@@ -127,6 +121,8 @@ var PileView = Backbone.View.extend({
 			this.$wfHeader.hide();
 			this.navBarView.showWfTasksLink(false);
 		}
+
+		this.$nextHeader.toggle(this.pile.tasks.length > 0);
 
 		this.$addHeader.text(this.pile.tasks.length > 0 ? "Add more tasks:" : "Add tasks:");
 		this.$el.toggleClass("non-empty", this.pile.tasks.length > 0);
