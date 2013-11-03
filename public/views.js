@@ -346,8 +346,8 @@ var ImportExportView = Backbone.View.extend({
 var SelectionView = Backbone.View.extend({
 	html: '<div class="question text-center">Which is more important to do first?<br /><button type="button" class="btn btn-xs btn-default shuffle" data-toggle="tooltip" title="Choose another 2 tasks to compare instead.">I can\'t decide!</button></div>' +
 	      '<div class="row task-row">' +
-	      '  <div class="col-md-6"><div class="left"><button type="button" class="btn btn-success this-one">This One!</button><div class="task selection-task"></div></div></div>' +
-	      '  <div class="col-md-6"><div class="right"><button type="button" class="btn btn-success this-one">This One!</button><div class="task selection-task"></div></div></div>' +
+	      '  <div class="col-md-6"><div class="left"><button type="button" class="btn btn-success this-one">This One!</button><div class="task-spot"></div></div></div>' +
+	      '  <div class="col-md-6"><div class="right"><button type="button" class="btn btn-success this-one">This One!</button><div class="task-spot"></div></div></div>' +
 	      '</div>',
 
 	className: "selection",
@@ -360,8 +360,8 @@ var SelectionView = Backbone.View.extend({
 
 	initialize: function () {
 		this.$el.html(this.html);
-		this.$left = this.$(".task-row .left .task");
-		this.$right = this.$(".task-row .right .task");
+		this.$left = this.$(".task-row .left .task-spot");
+		this.$right = this.$(".task-row .right .task-spot");
 
 		this.$("button.shuffle").tooltip({ placement: "top" });
 	},
@@ -377,8 +377,9 @@ var SelectionView = Backbone.View.extend({
 		if (task) {
 			var view = new TaskView({
 				model: task,
-				el: $el[0],
+				className: "task selection-task",
 			});
+			$el.append(view.render().el);
 		}
 	},
 
