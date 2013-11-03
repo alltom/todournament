@@ -279,7 +279,7 @@ var NavBarView = Backbone.View.extend({
 			var toDestroy = this.pile.comparisons.filter(function (comparison) {
 				var greaterTask = this.pile.tasks.get(comparison.get("greaterTaskId"));
 				var lesserTask = this.pile.tasks.get(comparison.get("lesserTaskId"));
-				return !greaterTask || !lesserTask;
+				return comparison.get("invalidated") || !greaterTask || !lesserTask;
 			}, this);
 			doBatch(function () {
 				_.invoke(toDestroy, "destroy");
