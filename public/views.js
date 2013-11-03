@@ -196,7 +196,7 @@ var NavBarView = Backbone.View.extend({
 	      '      </ul>' +
 	      '    </li>' +
 	      '  </ul>' +
-	      '  <p class="navbar-text description visible-lg"><span class="count"></span>, saved in <abbr data-toggle="tooltip" title="Saved on your computer (not our server), so don\'t clear your cookies! Dropbox support coming soon.">Local Storage</abbr></p>' +
+	      '  <p class="navbar-text description hidden-xs"><span class="count"></span>, saved in <abbr data-toggle="tooltip" title="Saved on your computer (not our server), so don\'t clear your cookies! Dropbox support coming soon.">Local Storage</abbr></p>' +
 	      '</div>' +
 	      '</nav>',
 
