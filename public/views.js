@@ -434,6 +434,7 @@ var ReprioritizeDueView = Backbone.View.extend({
 
 	events: {
 		"click .btn-primary" : "reprioritizeClicked",
+		"click .progress-bar" : "progressBarClicked",
 	},
 
 	initialize: function () {
@@ -485,6 +486,16 @@ var ReprioritizeDueView = Backbone.View.extend({
 		}, this);
 
 		this.$el.modal("hide");
+	},
+
+	progressBarClicked: function (e) {
+		var $el = $(e.target);
+		var count = 0;
+		if ($el.hasClass("progress-bar-success")) count = this.counts.fine + this.counts.danger + this.counts.overdue;
+		if ($el.hasClass("progress-bar-warning")) count = this.counts.danger + this.counts.overdue;
+		if ($el.hasClass("progress-bar-danger")) count = this.counts.overdue;
+		this.$slider.slider("setValue", -count);
+		this.onSlide({ value: -count });
 	},
 
 	onSlide: function (e) {
