@@ -51,6 +51,16 @@ var PileView = Backbone.View.extend({
 		this.selectionView.render();
 		this.listenTo(this.selectionView, "compared", this.tasksCompared);
 		this.listenTo(this.selectionView, "shuffle", this.render);
+		$(document).bind("keydown", "ctrl+left", _.bind(function () {
+			if (this.showingSelection) {
+				this.tasksCompared(this.selectionView.leftTask, this.selectionView.rightTask);
+			}
+		}, this));
+		$(document).bind("keydown", "ctrl+right", _.bind(function () {
+			if (this.showingSelection) {
+				this.tasksCompared(this.selectionView.rightTask, this.selectionView.leftTask);
+			}
+		}, this));
 
 		this.nextTaskListView = new TaskListView({
 			el: this.$next,
@@ -88,6 +98,7 @@ var PileView = Backbone.View.extend({
 			this.selectionView.prepare(pair[0], pair[1]);
 			this.selectionView.render();
 			this.$selection.show();
+			this.showingSelection = true;
 
 			this.nextProgressView.update(forest.potentialNextTasks.length - 1, progress);
 			this.$nextProgress.fadeIn();
@@ -95,6 +106,7 @@ var PileView = Backbone.View.extend({
 			this.navBarView.showComparisonLink(this.$selection);
 		} else {
 			this.$selection.fadeOut();
+			this.showingSelection = false;
 			this.$nextProgress.hide();
 			this.navBarView.showComparisonLink(false);
 		}
