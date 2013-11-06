@@ -51,17 +51,17 @@ var PileView = Backbone.View.extend({
 		this.selectionView.render();
 		this.listenTo(this.selectionView, "compared", this.tasksCompared);
 		this.listenTo(this.selectionView, "shuffle", this.render);
-		$(document).bind("keypress", "ctrl+left", _.bind(function () {
+		$(document).bind("keyup", "ctrl+left", _.bind(function () {
 			if (this.showingSelection) {
 				this.tasksCompared(this.selectionView.leftTask, this.selectionView.rightTask);
 			}
 		}, this));
-		$(document).bind("keypress", "ctrl+right", _.bind(function () {
+		$(document).bind("keyup", "ctrl+right", _.bind(function () {
 			if (this.showingSelection) {
 				this.tasksCompared(this.selectionView.rightTask, this.selectionView.leftTask);
 			}
 		}, this));
-		$(document).bind("keypress", "ctrl+up", _.bind(function () {
+		$(document).bind("keyup", "ctrl+up", _.bind(function () {
 			if (this.showingSelection) {
 				this.render();
 			}
