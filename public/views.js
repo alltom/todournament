@@ -642,7 +642,7 @@ var TaskView = Backbone.View.extend({
 	      '<button type="button" class="btn btn-xs btn-info reprioritize">Reprioritize</button>' +
 	      '<button type="button" class="btn btn-xs btn-warning put-off">Put Off&#8230;</button>' +
 	      '<button type="button" class="btn btn-xs btn-success ready">Ready!</button>' +
-	      '<button type="button" class="btn btn-xs btn-danger delete">Delete</button>' +
+	      '<button type="button" class="btn btn-xs btn-danger delete">Remove</button>' +
 	      '</div> ' +
 	      '<span class="text"></span> ' +
 	      '<span class="wf"></span>',
