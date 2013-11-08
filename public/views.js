@@ -103,6 +103,7 @@ var PileView = Backbone.View.extend({
 			this.selectionView.prepare(pair[0], pair[1]);
 			this.selectionView.render();
 			this.$selection.show();
+			this.$selection.effect("highlight", {}, 600);
 			this.showingSelection = true;
 
 			this.nextProgressView.update(forest.potentialNextTasks.length - 1, progress);
