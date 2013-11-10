@@ -341,6 +341,10 @@ var ImportExportView = Backbone.View.extend({
 		this.$el.html(this.html);
 
 		this.$("textarea").val(JSON.stringify(this.pile.toJSON(), null, "  "));
+
+		this.$el.on("shown.bs.modal", _.bind(function () {
+			this.$("textarea").focus().select();
+		}, this));
 	},
 
 	importCopyClicked: function () {
