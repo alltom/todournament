@@ -1,9 +1,8 @@
 var PileView = Backbone.View.extend({
 	html: '<div class="navigation" />' +
-	      '<div class="selection well" />' +
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
-	      '  <div class="task-list next-progress"></div>' +
+	      '<div class="task-list"><div class="selection task row"></div></div>' +
 	      '<h3 class="tasks"><span>Here are the rest of your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-info reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button></h3>' +
 	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
@@ -32,7 +31,6 @@ var PileView = Backbone.View.extend({
 
 		this.$nextHeader = this.$("h3.next-task");
 		this.$next = this.$(".next");
-		this.$nextProgress = this.$(".next-progress");
 
 		this.$restHeader = this.$("h3.tasks");
 		this.$restHeaderCaption = this.$("h3.tasks span");
@@ -47,7 +45,10 @@ var PileView = Backbone.View.extend({
 
 		this.navBarView = new NavBarView({ el: this.$(".navigation"), model: this.pile });
 
-		this.selectionView = new SelectionView({ el: this.$selection[0] });
+		this.selectionView = new SelectionView({
+			el: this.$selection[0],
+			model: this.pile.taskForest,
+		});
 		this.selectionView.render();
 		this.listenTo(this.selectionView, "compared", this.tasksCompared);
 		this.listenTo(this.selectionView, "shuffle", this.render);
@@ -71,8 +72,6 @@ var PileView = Backbone.View.extend({
 			el: this.$next,
 			model: this.pile.taskForest.nextTasks,
 		});
-		this.nextProgressView = new TaskProgressView();
-		this.$nextProgress.append(this.nextProgressView.render().el);
 
 		this.taskListView = new TaskListView({
 			el: this.$rest,
@@ -106,14 +105,10 @@ var PileView = Backbone.View.extend({
 			this.$selection.effect("highlight", {}, 600);
 			this.showingSelection = true;
 
-			this.nextProgressView.update(forest.potentialNextTasks.length - 1, progress);
-			this.$nextProgress.fadeIn();
-
 			this.navBarView.showComparisonLink(this.$selection);
 		} else {
 			this.$selection.fadeOut();
 			this.showingSelection = false;
-			this.$nextProgress.hide();
 			this.navBarView.showComparisonLink(false);
 		}
 
@@ -362,8 +357,8 @@ var ImportExportView = Backbone.View.extend({
 });
 
 var SelectionView = Backbone.View.extend({
-	html: '<div class="question text-center">Which is more important to do first?<br /><button type="button" class="btn btn-xs btn-default shuffle" data-toggle="tooltip" title="Choose another 2 tasks to compare instead.">I can\'t decide!</button></div>' +
-	      '<div class="row task-row">' +
+	html: '<div class="question">Choose which of these tasks is more important to do first <span class="num-left"></span> <button type="button" class="btn btn-xs btn-default shuffle" data-toggle="tooltip" title="Choose another 2 tasks to compare instead.">I can\'t decide!</button></div>' +
+	      '<div class="task-row">' +
 	      '  <div class="col-md-6"><div class="left"><button type="button" class="btn btn-success this-one">This One!</button><div class="task-spot"></div></div></div>' +
 	      '  <div class="col-md-6"><div class="right"><button type="button" class="btn btn-success this-one">This One!</button><div class="task-spot"></div></div></div>' +
 	      '</div>',
@@ -377,7 +372,10 @@ var SelectionView = Backbone.View.extend({
 	},
 
 	initialize: function () {
+		this.forest = this.model;
+
 		this.$el.html(this.html);
+		this.$numLeft = this.$(".num-left");
 		this.$left = this.$(".task-row .left .task-spot");
 		this.$right = this.$(".task-row .right .task-spot");
 
@@ -385,6 +383,8 @@ var SelectionView = Backbone.View.extend({
 	},
 
 	render: function () {
+		var count = this.forest.potentialNextTasks.length - 1;
+		this.$numLeft.text("(" + count + " comparison" + (count === 1 ? "" : "s") + " left until next action is known)")
 		this.renderOne(this.$left, this.leftTask);
 		this.renderOne(this.$right, this.rightTask);
 	},
@@ -749,31 +749,6 @@ var TaskView = Backbone.View.extend({
 	deleteClicked: function () {
 		console.log("destroying task", this.task.get("text"));
 		this.task.destroy();
-	},
-});
-
-var TaskProgressView = Backbone.View.extend({
-	html: '<div class="message"></div>' +
-	      '<div class="progress">' +
-	      '  <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">' +
-	      '    <span class="sr-only">0% Complete</span>' +
-	      '  </div>' +
-	      '</div>',
-
-	className: "task",
-
-	initialize: function () {
-		this.$el.html(this.html);
-	},
-
-	update: function (comparisonsLeft, percent) {
-		this.$(".message").html("<strong>Compare tasks above!</strong> " + comparisonsLeft + " comparison" + (comparisonsLeft === 1 ? "" : "s") + " until next task is known&#8230;");
-
-		var outOf100 = percent * 100;
-		this.$(".progress-bar")
-			.prop("aria-valuenow", Math.floor(outOf100))
-			.css("width", outOf100 + "%");
-		this.$(".progress-bar span").text(outOf100 + "% Complete");
 	},
 });
 

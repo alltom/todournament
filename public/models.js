@@ -151,20 +151,20 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 			}
 		}, 0);
 
-		potentialNexts = byLevel[0] || {};
-
 		for (var level = 0, next = true; byLevel[level]; level++) {
 			var tasks = _.values(byLevel[level]);
 			if (next && tasks.length === 1) {
 				nexts[tasks[0].cid] = tasks[0];
-				next = false; // limit to 1 next task for now
 			} else {
-				next = false;
+				potentialNexts = potentialNexts || byLevel[level];
 				_.each(tasks, function (task) {
 					rests[task.cid] = task;
 				}, this);
+				next = false;
 			}
 		}
+
+		potentialNexts = potentialNexts || {};
 
 		this.potentialNextTasks.reset(_.chain(potentialNexts).values().sortBy(this.taskComparator).value());
 		this.nextTasks.reset(_.chain(nexts).values().sortBy(this.taskComparator).value());
@@ -197,6 +197,7 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 
 		this._addChild(greaterTask.cid, lesserTask.cid);
 		removeFromSet(this._roots, lesserTask.cid);
+		this._levelCache = {};
 	},
 
 	_recalculate: function () {
@@ -204,6 +205,7 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this._parents = {}; // cid -> [cid, ...]
 		this._size = {}; // cid -> int
 		this._roots = []; // [cid, ...]
+		this._levelCache = {}; // cid -> int
 
 		this.tasks.each(this._addTask, this);
 		this.comparisons.each(this._addComparison, this);
@@ -252,12 +254,18 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		return getLevel(cid);
 
 		function getLevel(currentCid) {
+			if (currentCid in self._levelCache) {
+				return self._levelCache[currentCid];
+			}
+
 			var parentCids = self._parents[currentCid] || [];
 			if (parentCids.length === 0) {
 				return 0;
 			}
 
-			return _.max(parentCids.map(getLevel)) + 1;
+			var level = _.max(parentCids.map(getLevel)) + 1;
+			self._levelCache[currentCid] = level;
+			return level;
 		}
 	},
 

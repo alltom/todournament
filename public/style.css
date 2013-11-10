@@ -18,25 +18,12 @@ body {
 	display: none;
 }
 
-.selection {
-	margin-top: 20px;
-	padding: 10px 10px 0;
-	background: white;
-}
-
-.selection .question {
-	font-size: 24px;
-	font-weight: 500;
-	line-height: 1.1;
-	margin-bottom: 10px;
-}
-
-.selection .shuffle {
-	text-align: center;
+.selection .task-row {
+	margin-top: 16px;
 }
 
 .selection .task {
-	margin: .5em 0;
+	border-width: 0;
 }
 
 .selection .task .tools .reprioritize,
@@ -53,7 +40,7 @@ body {
 }
 
 .task-list .task {
-	margin: .2em;
+	margin: .2em 0;
 }
 
 .next .task .tools .ready,
@@ -111,7 +98,6 @@ div.footer {
 	margin-top: 3em;
 }
 
-.selection,
 .task-list.next .task {
 	border-color: #66afe9;
 	outline: 0;
