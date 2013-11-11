@@ -1,5 +1,16 @@
 body {
 	padding-bottom: 200px;
+	-ms-user-select: none;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+.navbar-text.description,
+h3,
+.task .text {
+	-ms-user-select: all;
+	-moz-user-select: all;
+	-webkit-user-select: all;
 }
 
 #error {
@@ -56,12 +67,6 @@ body {
 	padding: .5em;
 	overflow: auto;
 	background: white;
-}
-
-.task .number {
-	-ms-user-select: none;
-	-moz-user-select: none;
-	-webkit-user-select: none;
 }
 
 .task .tools {
