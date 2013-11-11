@@ -58,6 +58,12 @@ body {
 	background: white;
 }
 
+.task .number {
+	-ms-user-select: none;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
 .task .tools {
 	float: right;
 }
