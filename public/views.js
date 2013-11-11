@@ -72,6 +72,7 @@ var PileView = Backbone.View.extend({
 			el: this.$next,
 			model: this.pile.taskForest.nextTasks,
 		});
+		this.nextTaskListView.showTaskNumbers(true);
 
 		this.taskListView = new TaskListView({
 			el: this.$rest,
@@ -620,15 +621,20 @@ var TaskListView = Backbone.View.extend({
 		this._syncViews();
 	},
 
+	showTaskNumbers: function (show) {
+		this.numberTasks = show;
+		this._syncViews();
+	},
+
 	_syncViews: function () {
 		var tasks = this.tasks.toArray();
 
 		var tasksByCid = _.indexBy(tasks, "cid");
 
 		var oldCids = _.keys(this.taskViews);
-		var newCids = _.pluck(tasks, "cid");
-		var removedCids = _.difference(oldCids, newCids);
-		var addedCids = _.difference(newCids, oldCids);
+		var currentCids = _.pluck(tasks, "cid");
+		var removedCids = _.difference(oldCids, currentCids);
+		var addedCids = _.difference(currentCids, oldCids);
 
 		_.each(removedCids, function (cid) {
 			this.taskViews[cid].remove();
@@ -640,8 +646,11 @@ var TaskListView = Backbone.View.extend({
 			this.taskViews[cid] = new TaskView({ model: task }).render();
 		}, this);
 
-		_.each(tasks, function (task) {
+		_.each(tasks, function (task, i) {
 			this.$el.append(this.taskViews[task.cid].el);
+			if (this.numberTasks) {
+				this.taskViews[task.cid].showNumber(i + 1);
+			}
 		}, this);
 	},
 });
@@ -655,6 +664,7 @@ var TaskView = Backbone.View.extend({
 	      '<button type="button" class="btn btn-xs btn-success ready">Ready!</button>' +
 	      '<button type="button" class="btn btn-xs btn-danger delete">Remove</button>' +
 	      '</div> ' +
+	      '<span class="number"></span>' +
 	      '<span class="text"></span> ' +
 	      '<span class="wf"></span>',
 
@@ -675,6 +685,7 @@ var TaskView = Backbone.View.extend({
 
 		this.$el.html(this.html);
 		this.$timeScaleSelect = this.$("select");
+		this.$number = this.$("span.number");
 		this.$text = this.$("span.text");
 		this.$wf = this.$("span.wf");
 
@@ -694,6 +705,13 @@ var TaskView = Backbone.View.extend({
 		this.timeScaleUpdated();
 		this.textUpdated();
 		this.wfUpdated();
+	},
+
+	showNumber: function (number) {
+		if (number !== this.number) {
+			this.$number.text(number + ". ");
+			this.number = number;
+		}
 	},
 
 	timeScaleUpdated: function () {
