@@ -210,6 +210,7 @@ var NavBarView = Backbone.View.extend({
 	      '</nav>',
 
 	events: {
+		"click .navbar-brand" : "logoClicked",
 		"click .comparison" : "comparisonClicked",
 		"click .tasks" : "tasksClicked",
 		"click .wf-tasks" : "wfTasksClicked",
@@ -256,6 +257,11 @@ var NavBarView = Backbone.View.extend({
 	showAddTasksLink: function ($dom) {
 		this.$addTasksLink.toggle(!!$dom);
 		this.$addTasksLinkTarget = $dom;
+	},
+
+	logoClicked: function (e) {
+		e.preventDefault();
+		$(document.body).animate({ scrollTop: 0 });
 	},
 
 	comparisonClicked: function (e) {
