@@ -7,7 +7,8 @@ body {
 
 .navbar-text.description,
 h3,
-.task .text {
+.task .text,
+.task .wf {
 	-ms-user-select: all;
 	-moz-user-select: all;
 	-webkit-user-select: all;
