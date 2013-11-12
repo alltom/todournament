@@ -383,14 +383,16 @@ var SelectionView = Backbone.View.extend({
 
 		this.$el.html(this.html);
 		this.$numLeft = this.$(".num-left");
+		this.$shuffle = this.$("button.shuffle");
 		this.$left = this.$(".task-row .left .task-spot");
 		this.$right = this.$(".task-row .right .task-spot");
 
-		this.$("button.shuffle").tooltip({ placement: "top" });
+		this.$shuffle.tooltip({ placement: "top" });
 	},
 
 	render: function () {
 		var count = this.forest.potentialNextTasks.length - 1;
+		this.$shuffle.toggle(count > 1);
 		this.$numLeft.text("(" + count + " comparison" + (count === 1 ? "" : "s") + " left until next action is known)")
 		this.renderOne(this.$left, this.leftTask);
 		this.renderOne(this.$right, this.rightTask);
