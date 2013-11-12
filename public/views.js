@@ -574,24 +574,23 @@ var ReprioritizeDueView = Backbone.View.extend({
 		count = Math.max(0, count - this.counts.danger);
 		var numFine = Math.min(this.counts.fine, count);
 
-		var descs = { short: [], long: [] };
+		var short = []; // ex: ["4 overdue", "2 almost due", "19 tasks"]
+		var long = []; // ex: ["1 task that's overdue", "1 task that's not due for a while"]
 
 		if (numOverdue > 0 || (numDanger === 0 && numFine === 0)) {
-			descs.long.push(pluralize(numOverdue, "task that's overdue", "tasks that are overdue"));
-			descs.short.push(numOverdue + " overdue");
+			long.push(pluralize(numOverdue, "task that's overdue", "tasks that are overdue"));
+			short.push(numOverdue + " overdue");
 		}
 		if (numDanger > 0) {
-			descs.long.push(pluralize(numDanger, "task that's almost due", "tasks that are almost due"));
-			descs.short.push(numDanger + " almost due");
+			long.push(pluralize(numDanger, "task that's almost due", "tasks that are almost due"));
+			short.push(numDanger + " almost due");
 		}
 		if (numFine > 0) {
-			descs.long.push(pluralize(numFine, "task that's not due for a while", "tasks that aren't due for a while"));
-			descs.short.push(pluralize(numFine, "task", "tasks"));
+			long.push(pluralize(numFine, "task that's not due for a while", "tasks that aren't due for a while"));
+			short.push(pluralize(numFine, "task", "tasks"));
 		}
 
-		descs.long = sentenceJoin(descs.long);
-		descs.short = descs.short.join(", ");
-		return descs;
+		return { long: sentenceJoin(long), short: short.join(", ") };
 
 		function pluralize(num, singular, plural) {
 			if (num === 1) {
