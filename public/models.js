@@ -95,8 +95,6 @@ function TaskForest(tasks, comparisons) {
 
 	this.listenTo(tasks, "add remove reset change:waitingFor change:invalidated", atBatchEnd(this._recalculate, this));
 	this.listenTo(comparisons, "add remove reset sort change:invalidated", atBatchEnd(this._recalculate, this));
-
-	// this.listenTo(this, "recalculate", this._debug);
 }
 _.extend(TaskForest.prototype, Backbone.Events, {
 	randomComparisonTaskPair: function () {
@@ -222,15 +220,6 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this._updateCollections();
 
 		this.trigger("recalculate");
-	},
-
-	_debug: function () {
-		console.group();
-		this._walk(null, _.bind(function (task, indent) {
-			console.log(indent + task.get("text") + (task.has("waitingFor") ? " wf" : ""));
-			return indent + "  ";
-		}, this), "");
-		console.groupEnd();
 	},
 
 	_addChild: function (parentCid, childCid) {
