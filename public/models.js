@@ -3,6 +3,7 @@
 var Task = Backbone.Model.extend({
 	defaults: {
 		text: "",
+		invalidated: false,
 	},
 
 	putOff: function (until) {
@@ -16,6 +17,13 @@ var Task = Backbone.Model.extend({
 		this.unset("waitingFor");
 		this.unset("waitingForSetAt");
 		this.save();
+	},
+
+	invalidate: function () {
+		this.save({
+			invalidated: true,
+			invalidatedAt: new Date,
+		});
 	},
 }, {
 	timeScales: [
@@ -85,7 +93,7 @@ function TaskForest(tasks, comparisons) {
 
 	this._recalculate();
 
-	this.listenTo(tasks, "add remove reset change:waitingFor", atBatchEnd(this._recalculate, this));
+	this.listenTo(tasks, "add remove reset change:waitingFor change:invalidated", atBatchEnd(this._recalculate, this));
 	this.listenTo(comparisons, "add remove reset sort change:invalidated", atBatchEnd(this._recalculate, this));
 
 	// this.listenTo(this, "recalculate", this._debug);
@@ -142,7 +150,9 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		}
 
 		this._walk(null, function (task, level) {
-			if (task.has("waitingFor")) {
+			if (task.get("invalidated")) {
+				return level;
+			} else if (task.has("waitingFor")) {
 				wfs[task.cid] = task;
 				return level;
 			} else {
@@ -209,7 +219,6 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 
 		this.tasks.each(this._addTask, this);
 		this.comparisons.each(this._addComparison, this);
-
 		this._updateCollections();
 
 		this.trigger("recalculate");

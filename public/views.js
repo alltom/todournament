@@ -298,13 +298,16 @@ var NavBarView = Backbone.View.extend({
 	purgeClicked: function (e) {
 		e.preventDefault();
 		if (confirm("Purge deleted tasks and comparisons? Do this if things get slow. You can use the \"Import/Export\" button to make a backup in case you ever want them back.")) {
-			var toDestroy = this.pile.comparisons.filter(function (comparison) {
-				var greaterTask = this.pile.tasks.get(comparison.get("greaterTaskId"));
-				var lesserTask = this.pile.tasks.get(comparison.get("lesserTaskId"));
-				return comparison.get("invalidated") || !greaterTask || !lesserTask;
-			}, this);
 			doBatch(function () {
-				_.invoke(toDestroy, "destroy");
+				var tasksToDestroy = this.pile.tasks.where({ invalidated: true });
+				_.invoke(tasksToDestroy, "destroy");
+
+				var comparisonsToDestroy = this.pile.comparisons.filter(function (comparison) {
+					var greaterTask = this.pile.tasks.get(comparison.get("greaterTaskId"));
+					var lesserTask = this.pile.tasks.get(comparison.get("lesserTaskId"));
+					return comparison.get("invalidated") || !greaterTask || !lesserTask;
+				}, this);
+				_.invoke(comparisonsToDestroy, "destroy");
 			}, this);
 		}
 	},
@@ -772,8 +775,8 @@ var TaskView = Backbone.View.extend({
 	},
 
 	deleteClicked: function () {
-		console.log("destroying task", this.task.get("text"));
-		this.task.destroy();
+		console.log("invalidating task", this.task.get("text"));
+		this.task.invalidate();
 	},
 });
 
