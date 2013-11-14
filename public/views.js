@@ -88,7 +88,7 @@ var PileView = Backbone.View.extend({
 		this.newTasksView.on("add-many", this.addNewTasks, this);
 		this.newTasksView.render();
 
-		this.listenTo(this.pile.tasks, "add remove reset change:waitingFor", atBatchEnd(this.render, this));
+		this.listenTo(this.pile.tasks, "add remove reset change:waitingFor change:invalidated", atBatchEnd(this.render, this));
 		this.listenTo(this.pile.comparisons, "add remove reset change:greaterTaskId change:lesserTaskId change:invalidated", atBatchEnd(this.render, this));
 	},
 
@@ -230,14 +230,15 @@ var NavBarView = Backbone.View.extend({
 		this.$addTasksLink = this.$(".add").hide();
 
 		this.$taskCount = this.$(".description .count");
-		this.listenTo(this.pile.tasks, "add remove reset", atBatchEnd(this.taskCountChanged, this));
+		this.listenTo(this.pile.tasks, "add remove reset change:invalidated", atBatchEnd(this.taskCountChanged, this));
 		this.taskCountChanged();
 
 		this.$(".description abbr").tooltip({ placement: "bottom" });
 	},
 
 	taskCountChanged: function () {
-		this.$taskCount.text(this.pile.tasks.length + " task" + (this.pile.tasks.length === 1 ? "" : "s"));
+		var count = this.pile.tasks.where({ invalidated: false }).length;
+		this.$taskCount.text(count + " task" + (count === 1 ? "" : "s"));
 	},
 
 	showComparisonLink: function ($dom) {
@@ -858,7 +859,7 @@ var NewTasksView = Backbone.View.extend({
 	},
 
 	_isDuplicate: function (text) {
-		return !!this.pile.tasks.findWhere({ text: text });
+		return !!this.pile.tasks.findWhere({ invalidated: false, text: text });
 	},
 
 	_isNotDuplicate: function (text) {
