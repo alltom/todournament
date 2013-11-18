@@ -9,9 +9,9 @@ body {
 h3,
 .task .text,
 .task .wf {
-	-ms-user-select: all;
-	-moz-user-select: all;
-	-webkit-user-select: all;
+	-ms-user-select: text;
+	-moz-user-select: text;
+	-webkit-user-select: text;
 }
 
 #error {
