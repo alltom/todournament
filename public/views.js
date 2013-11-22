@@ -480,11 +480,14 @@ var ReprioritizeDueView = Backbone.View.extend({
 		this.$slider = this.$(".sslider");
 		this.$count = this.$("p.status span");
 
-		var comparisons = this.pile.comparisons.where({invalidated: false});
 		this.counts = { fine: 0, danger: 0, overdue: 0 };
-		this.total = comparisons.length;
-		this.sortedComparisons = _.sortBy(comparisons, function (c) {
-			var d = this.dueness(c);
+
+		var tasks = this.pile.tasks.where({invalidated: false});
+		this.total = tasks.length;
+		this.sortedTasks = _.sortBy(tasks, function (task) {
+			var comparisons = this.comparisonsForTask(task);
+			var d = _.chain(comparisons).map(this.dueness, this).min().value();
+			if (!isFinite(d)) d = 0;
 			if (d > 1) this.counts.overdue++;
 			else if (d > 0.5) this.counts.danger++;
 			else this.counts.fine++;
@@ -535,7 +538,8 @@ var ReprioritizeDueView = Backbone.View.extend({
 
 	onSlide: function (e) {
 		var count = -e.value;
-		this.comparisonsToInvalidate = this.sortedComparisons.slice(0, count);
+		var tasks = this.sortedTasks.slice(0, count);
+		this.comparisonsToInvalidate = _.chain(tasks).map(this.comparisonsForTask, this).flatten().value();
 
 		this.$count.text(this.format(count).long);
 
@@ -613,6 +617,10 @@ var ReprioritizeDueView = Backbone.View.extend({
 				return arr.slice(0, arr.length - 1).join(", ") + ", and " + arr[arr.length - 1];
 			}
 		}
+	},
+
+	comparisonsForTask: function (task) {
+		return this.pile.comparisons.where({lesserTaskId: task.id, invalidated: false});
 	},
 });
 
