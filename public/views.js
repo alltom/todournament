@@ -555,9 +555,9 @@ var ReprioritizeDueView = Backbone.View.extend({
 		var age = (new Date) - Date.parse(comparison.get("createdAt"));
 		var range = 4 * 7 * 24 * 60 * 60 * 1000; // default range: 1 month
 
-		var greaterTask = this.pile.tasks.get(comparison.get("greaterTaskId"));
-		if (greaterTask) {
-			var timeScaleId = greaterTask.get("timeScaleId");
+		var lesserTask = this.pile.tasks.get(comparison.get("lesserTaskId"));
+		if (lesserTask) {
+			var timeScaleId = lesserTask.get("timeScaleId");
 			var timeScale = _.filter(Task.timeScales, function (scale) { return scale.id === timeScaleId })[0];
 			if (timeScale) {
 				range = timeScale.range;
