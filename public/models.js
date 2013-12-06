@@ -177,7 +177,7 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this.potentialNextTasks.reset(_.chain(potentialNexts).values().sortBy(this.taskComparator).value());
 		this.nextTasks.reset(_.chain(nexts).values().sortBy(this.taskComparator).value());
 		this.restTasks.reset(_.chain(rests).values().sortBy(this.taskComparator).value());
-		this.wfTasks.reset(_.chain(wfs).values().sortBy(this.taskComparator).value());
+		this.wfTasks.reset(_.chain(wfs).values().sortBy(function (t) { return new Date(t.get("waitingForSetAt")) }).value());
 	},
 
 	_addTask: function (task) {
