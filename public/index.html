@@ -64,6 +64,7 @@ function fetchedPiles(storageName) {
 var router = new (Backbone.Router.extend({
 	routes: {
 		"" : "home",
+		"piles/new" : "newPile",
 		"piles/:storageName/:id" : "pile",
 	},
 
@@ -85,6 +86,21 @@ var router = new (Backbone.Router.extend({
 				$.when(pile.tasks.fetch({reset: true}), pile.comparisons.fetch({reset: true})).done(function () {
 					goToPile(pile);
 				}).fail(showError);
+			}
+		}
+	},
+
+	newPile: function () {
+		fetchedPiles("localStorage").then(gotPiles, showError);
+
+		function gotPiles(piles) {
+			var pile = piles.create({ name: "Default" });
+			if (pile.has("id")) {
+				goToPile(pile);
+			} else {
+				pile.once("change:id", function () {
+					goToPile(pile);
+				});
 			}
 		}
 	},
