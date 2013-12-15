@@ -16,7 +16,6 @@ LocalStore.prototype = {
 };
 
 function DropboxStore(scope, name) {
-	console.log(scope, name)
 	this.scope = scope;
 	this.name = name;
 	if (scope) {
