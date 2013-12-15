@@ -31,6 +31,8 @@
 <script src="underscore.js"></script>
 <script src="backbone.js"></script>
 <script src="backbone.localStorage.js"></script>
+<script src="js/backbone.dropboxDatastore.js"></script>
+<script src="https://www.dropbox.com/static/api/dropbox-datastores-1.0-latest.js" type="text/javascript"></script>
 <script src="batch.js"></script>
 <script src="store.js"></script>
 <script src="models.js"></script>
@@ -40,22 +42,40 @@
 <script>
 
 var pilepile = {
-	localStorage: new PileCollection(new LocalStore("piles")),
+	localStorage: function () {
+		var d = new $.Deferred;
+		d.resolve(new PileCollection(new LocalStore(null, "piles")));
+		return d.promise();
+	},
+	dropbox: function () {
+		var d = new $.Deferred;
+		var client = new Dropbox.Client({key: "2tv34exxs52hmaa"});
+		client.authenticate({interactive: false}, function (error) {
+			if (error) {
+				d.reject("Dropbox error: " + error);
+			}
+		});
+		if (client.isAuthenticated()) {
+			Backbone.DropboxDatastore.client = client;
+			d.resolve(new PileCollection(new DropboxStore(null, "piles")));
+		} else {
+			client.authenticate(); // will redirect the user
+		}
+		return d.promise();
+	},
 };
 
 function fetchedPiles(storageName) {
 	var d = new $.Deferred;
 
-	var piles = pilepile[storageName];
-	if (!piles) {
-		d.reject("\"" + storageName + "\" piles not found!");
-		return d.promise();
-	}
-
-	piles.fetch({reset: true}).then(function () {
-		d.resolve(piles);
-	}, function () {
-		d.reject("Could not fetch \"" + storageName + "\" piles");
+	pilepile[storageName]().done(function (piles) {
+		piles.fetch({reset: true}).then(function () {
+			d.resolve(piles);
+		}, function () {
+			d.reject("Could not fetch \"" + storageName + "\" piles");
+		});
+	}).fail(function (error) {
+		d.reject(error);
 	});
 
 	return d.promise();
@@ -64,7 +84,7 @@ function fetchedPiles(storageName) {
 var router = new (Backbone.Router.extend({
 	routes: {
 		"" : "home",
-		"piles/new" : "newPile",
+		"piles/:storageName/new" : "newPile",
 		"piles/:storageName/:id" : "pile",
 	},
 
@@ -83,15 +103,13 @@ var router = new (Backbone.Router.extend({
 				}
 			} else {
 				var pile = piles.at(0);
-				$.when(pile.tasks.fetch({reset: true}), pile.comparisons.fetch({reset: true})).done(function () {
-					goToPile(pile);
-				}).fail(showError);
+				goToPile(pile);
 			}
 		}
 	},
 
-	newPile: function () {
-		fetchedPiles("localStorage").then(gotPiles, showError);
+	newPile: function (storageName) {
+		fetchedPiles(storageName).then(gotPiles, showError);
 
 		function gotPiles(piles) {
 			var pile = piles.create({ name: "Default" });
@@ -113,6 +131,7 @@ var router = new (Backbone.Router.extend({
 			$("#loading").hide();
 
 			var pile = piles.get(id);
+			pile.loadCollections();
 
 			if (pile) {
 				pile.tasks.fetch({reset: true});
@@ -127,7 +146,13 @@ var router = new (Backbone.Router.extend({
 			}
 		}
 	},
+
+	dropboxResult: function () {
+		// window.location.href = "/?" + window.location.hash.slice(1);
+		this.newPile("dropbox");
+	},
 }));
+router.route(/^access_token/, "dropboxResult");
 
 function showError(msg) {
 	$("#error").text(msg).show();

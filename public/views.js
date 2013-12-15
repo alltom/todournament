@@ -206,7 +206,7 @@ var NavBarView = Backbone.View.extend({
 	      '      </ul>' +
 	      '    </li>' +
 	      '  </ul>' +
-	      '  <p class="navbar-text description hidden-xs"><span class="count"></span>, saved in <abbr data-toggle="tooltip" title="Saved on your computer (not our server), so don\'t clear your cookies! Dropbox support coming soon.">Local Storage</abbr></p>' +
+	      '  <p class="navbar-text description hidden-xs"><span class="count"></span>, saved in <abbr data-toggle="tooltip" class="storage"></abbr></p>' +
 	      '</div>' +
 	      '</nav>',
 
@@ -232,6 +232,21 @@ var NavBarView = Backbone.View.extend({
 		this.$taskCount = this.$(".description .count");
 		this.listenTo(this.pile.tasks, "add remove reset change:invalidated", atBatchEnd(this.taskCountChanged, this));
 		this.taskCountChanged();
+
+		this.$storage = this.$(".description .storage");
+		if (this.pile.collection.storageName === "localStorage") {
+			this.$storage
+				.prop("title", "Saved on your computer (not our server), so don't clear your cookies! Dropbox support coming soon.")
+				.text("Local Storage");
+		} else if (this.pile.collection.storageName === "dropbox") {
+			this.$storage
+				.prop("title", "Saved on your Dropbox account (not our server)")
+				.text("Dropbox");
+		} else {
+			this.$storage
+				.prop("title", "Something strange has happened and I can't tell where your data is stored.")
+				.text("Somewhere?");
+		}
 
 		this.$(".description abbr").tooltip({ placement: "bottom" });
 	},
