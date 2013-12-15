@@ -14,8 +14,8 @@ var Task = Backbone.Model.extend({
 	},
 
 	resume: function () {
-		this.unset("waitingFor");
-		this.unset("waitingForSetAt");
+		this.set("waitingFor", null);
+		this.set("waitingForSetAt", null);
 		this.save();
 	},
 
@@ -150,7 +150,7 @@ _.extend(TaskForest.prototype, Backbone.Events, {
 		this._walk(null, function (task, level) {
 			if (task.get("invalidated")) {
 				return level;
-			} else if (task.has("waitingFor")) {
+			} else if (task.get("waitingFor") != null) {
 				wfs[task.cid] = task;
 				return level;
 			} else {

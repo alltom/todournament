@@ -738,7 +738,7 @@ var TaskView = Backbone.View.extend({
 		var $options = this.$timeScaleSelect.children("option");
 		$options.prop("selected", false);
 
-		if (this.task.has("timeScaleId")) {
+		if (this.task.get("timeScaleId") != null) {
 			$options.filter("[value=" + this.task.get("timeScaleId") + "]")
 			        .prop("selected", true);
 		}
@@ -749,7 +749,7 @@ var TaskView = Backbone.View.extend({
 	},
 
 	wfUpdated: function () {
-		if (this.task.has("waitingFor")) {
+		if (this.task.get("waitingFor") != null) {
 			this.$wf.show().text(this.task.get("waitingFor")).linkify();
 		} else {
 			this.$wf.hide().empty();
