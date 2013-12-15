@@ -345,6 +345,7 @@ var PileCollection = Backbone.Collection.extend({
 		pile.save().then(saveTasks, bail("Could not save pile"));
 
 		function saveTasks() {
+			pile.loadCollections();
 			pile.tasks.reset(_.map(taskJSONs, function (taskJSON) {
 				delete taskJSON.id;
 				return taskJSON;
