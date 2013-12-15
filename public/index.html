@@ -131,9 +131,9 @@ var router = new (Backbone.Router.extend({
 			$("#loading").hide();
 
 			var pile = piles.get(id);
-			pile.loadCollections();
 
 			if (pile) {
+				pile.loadCollections();
 				pile.tasks.fetch({reset: true});
 				pile.comparisons.fetch({reset: true});
 
