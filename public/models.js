@@ -306,8 +306,10 @@ var Pile = Backbone.Model.extend({
 	},
 
 	loadCollections: function () {
-		this.tasks = new TaskCollection(this.collection.store.makeStore("piles-" + this.id.toLowerCase(), "tasks"));
-		this.comparisons = new ComparisonCollection(this.collection.store.makeStore("piles-" + this.id.toLowerCase(), "comparisons"));
+		var storeID = this.get("storeID") || ("piles-" + this.id.toLowerCase());
+
+		this.tasks = new TaskCollection(this.collection.store.makeStore(storeID, "tasks"));
+		this.comparisons = new ComparisonCollection(this.collection.store.makeStore(storeID, "comparisons"));
 		this.taskForest = new TaskForest(this.tasks, this.comparisons);
 
 		this.tasks.pile = this.comparisons.pile = this;
