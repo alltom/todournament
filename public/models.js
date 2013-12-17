@@ -25,6 +25,14 @@ var Task = Backbone.Model.extend({
 			invalidatedAt: new Date,
 		});
 	},
+
+	toJSON: function () {
+		var o = Backbone.Model.prototype.toJSON.apply(this, arguments);
+		if (o.excludedContexts && o.excludedContexts.toArray) {
+			o.excludedContexts = o.excludedContexts.toArray();
+		}
+		return o;
+	},
 }, {
 	timeScales: [
 		{ id: "this-week",  label: "kinda soon", range: 7 * 24 * 60 * 60 * 1000 },
