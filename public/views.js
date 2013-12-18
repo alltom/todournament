@@ -762,7 +762,7 @@ var TaskView = Backbone.View.extend({
 
 	editClicked: function () {
 		var newText = prompt("", this.task.get("text"));
-		if (newText !== null) {
+		if (newText != null) {
 			this.task.save({ text: newText });
 		}
 	},
@@ -781,7 +781,7 @@ var TaskView = Backbone.View.extend({
 
 	putOffClicked: function () {
 		var wf = prompt("What are you waiting for?\n(ex: Tuesday, extra cash, the office)");
-		if (wf !== null) {
+		if (wf != null) {
 			this.task.putOff(wf);
 		}
 	},
