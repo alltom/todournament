@@ -241,7 +241,7 @@ var NavBarView = Backbone.View.extend({
 		} else if (this.pile.collection.storageName === "dropbox") {
 			this.$storage
 				.prop("title", "Saved on your Dropbox account (not our server)")
-				.text("Dropbox");
+				.text("Dropbox (NOT SUPPORTED)");
 		} else {
 			this.$storage
 				.prop("title", "Something strange has happened and I can't tell where your data is stored.")
