@@ -320,6 +320,9 @@ var Pile = Backbone.Model.extend({
 		this.comparisons = new ComparisonCollection(this.collection.store.makeStore(storeID, "comparisons"));
 		this.taskForest = new TaskForest(this.tasks, this.comparisons);
 
+		this.tasks.dropboxDatastore.syncCollection(this.tasks);
+		this.comparisons.dropboxDatastore.syncCollection(this.comparisons);
+
 		this.tasks.pile = this.comparisons.pile = this;
 	},
 
