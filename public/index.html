@@ -49,7 +49,7 @@ var pilepile = {
 	},
 	dropbox: function () {
 		var d = new $.Deferred;
-		var client = new Dropbox.Client({key: "2tv34exxs52hmaa"});
+		var client = new Dropbox.Client({key: "jaacbowomx6qtja"});
 		client.authenticate({interactive: false}, function (error) {
 			if (error) {
 				d.reject("Dropbox error: " + error);
