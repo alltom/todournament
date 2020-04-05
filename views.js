@@ -3,7 +3,7 @@ var PileView = Backbone.View.extend({
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
 	      '<div class="task-list"><div class="selection task row"></div></div>' +
-	      '<h3 class="tasks"><span>Here are the rest of your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-info reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button></h3>' +
+	      '<h3 class="tasks"><span>Here are the rest of your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-info reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button> <button type="button" class="btn btn-xs btn-info reprioritize-all" data-toggle="tooltip" title="Use this when you need to reorder the list from sctach.">Reprioritize All Tasks&#8230;</button></h3>' +
 	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
 	      '  <div class="task-list wf"></div>' +
@@ -19,6 +19,7 @@ var PileView = Backbone.View.extend({
 
 	events: {
 		"click .reprioritize-top" : "reprioritizeTopClicked",
+		"click .reprioritize-all" : "reprioritizeAllClicked",
 	},
 
 	initialize: function () {
@@ -28,6 +29,7 @@ var PileView = Backbone.View.extend({
 		this.$selection = this.$(".selection").hide();
 		this.$newTask = this.$(".new-task");
 		this.$reprioritizeTop = this.$(".reprioritize-top");
+		this.$reprioritizeAll = this.$(".reprioritize-all");
 
 		this.$nextHeader = this.$("h3.next-task");
 		this.$next = this.$(".next");
@@ -42,6 +44,7 @@ var PileView = Backbone.View.extend({
 		this.$addHeader = this.$("h3.add");
 
 		this.$reprioritizeTop.tooltip({ placement: "right" });
+		this.$reprioritizeAll.tooltip({ placement: "right" });
 
 		this.navBarView = new NavBarView({ el: this.$(".navigation"), model: this.pile });
 
@@ -116,6 +119,7 @@ var PileView = Backbone.View.extend({
 		if (forest.restTasks.length > 0) {
 			this.$restHeader.show();
 			this.$reprioritizeTop.toggle(this.pile.comparisons.where({invalidated: false}).length > 0);
+			this.$reprioritizeAll.toggle(this.pile.comparisons.where({invalidated: false}).length > 0);
 		} else {
 			this.$restHeader.hide();
 		}
@@ -168,6 +172,13 @@ var PileView = Backbone.View.extend({
 	reprioritizeTopClicked: function () {
 		var view = new ReprioritizeDueView({ model: this.pile });
 		view.$el.modal();
+	},
+
+	reprioritizeAllClicked: function () {
+		var comparisons = this.pile.comparisons.where({invalidated: false})
+		doBatch(function () {
+			_.invoke(comparisons, "invalidate");
+		}, this);
 	},
 });
 
