@@ -1,3 +1,4 @@
+// 2020-04-08 Modified by Tom to add rel="noreferrer noopener"
 $.fn.linkify = function () {
 	this.html(linkify(this.html()));
 	return this;
@@ -12,7 +13,7 @@ $.fn.linkify = function () {
 				suffix = ")";
 			}
 			var address = /[a-z]+:\/\//.test(url) ? url : "http://" + url;
-			return "<a href='" + address + "' target='_blank'>" + url + "</a>" + suffix;
+			return "<a href='" + address + "' target='_blank' rel='noreferrer noopener'>" + url + "</a>" + suffix;
 		});
 	}
 };
