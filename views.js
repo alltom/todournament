@@ -3,7 +3,7 @@ var PileView = Backbone.View.extend({
 	      '<h3 class="next-task">Here is what you should do now:</h3>' +
 	      '  <div class="task-list next"></div>' +
 	      '<div class="task-list"><div class="selection task row"></div></div>' +
-	      '<h3 class="tasks"><span>Here are the rest of your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-info reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button> <button type="button" class="btn btn-xs btn-info reprioritize-all" data-toggle="tooltip" title="Use this when you need to reorder the list from sctach.">Reprioritize All Tasks&#8230;</button></h3>' +
+	      '<h3 class="tasks"><span>Here are the rest of your tasks in very rough order:</span> <button type="button" class="btn btn-xs btn-info reprioritize-top" data-toggle="tooltip" title="Use this periodically to ensure urgent tasks don\'t get buried.">Reprioritize Due Tasks&#8230;</button> <button type="button" class="btn btn-xs btn-info reprioritize-all" data-toggle="tooltip" title="Use this when you need to reorder the list from scratch.">Reprioritize All Tasks&#8230;</button></h3>' +
 	      '  <div class="task-list rest"></div>' +
 	      '<h3 class="wf-tasks">Here are tasks that you\'ve put off:</h3>' +
 	      '  <div class="task-list wf"></div>' +
