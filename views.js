@@ -823,6 +823,7 @@ var NewTasksView = Backbone.View.extend({
 		"input textarea#new-task-textarea" : "textChanged",
 		"propertychange textarea#new-task-textarea" : "textChanged",
 		"change .exclude input" : "textChanged",
+		"keydown textarea#new-task-textarea" : "keydown",
 	},
 
 	initialize: function () {
@@ -855,6 +856,13 @@ var NewTasksView = Backbone.View.extend({
 		this.$exclude.toggle(numDupes > 0);
 		if (numDupes > 0) {
 			this.$excludeCount.text(numDupes + " duplicate task" + (numDupes === 1 ? "" : "s"));
+		}
+	},
+
+	keydown: function (e) {
+		// Ctrl/Cmd + Enter
+		if (e.metaKey && e.keyCode === 13) {
+			this.addSeveralTasks(e);
 		}
 	},
 
