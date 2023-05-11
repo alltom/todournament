@@ -435,7 +435,15 @@ var SelectionView = Backbone.View.extend({
 	},
 
 	shuffleClicked: function () {
+		let oldLeft = this.leftTask;
+		let oldRight = this.rightTask;
 		this.trigger("shuffle");
+		// using OR instead of AND since it feels more natural to completely
+		// switch the options, so no single side ever stays the same
+		while ( this.leftTask === oldLeft || this.rightTask === oldRight ) {
+			console.log("artificially switching options");
+			this.trigger("shuffle");
+		}
 	},
 
 	leftClicked: function (e) {
