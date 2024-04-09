@@ -415,10 +415,12 @@ var SelectionView = Backbone.View.extend({
 		this.$el.html(this.html);
 		this.$numLeft = this.$(".num-left");
 		this.$shuffle = this.$("button.shuffle");
+		this.$random = this.$("button.random");
 		this.$left = this.$(".task-row .left .task-spot");
 		this.$right = this.$(".task-row .right .task-spot");
 
 		this.$shuffle.tooltip({ placement: "top" });
+		this.$random.tooltip({ placement: "top" });
 	},
 
 	render: function () {
